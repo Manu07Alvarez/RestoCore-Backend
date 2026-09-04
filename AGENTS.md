@@ -41,3 +41,11 @@ El agente debe ejecutar y seguir los flujos correspondientes a las habilidades d
 * `speckit-analyze`: Analisis cruzado de consistencia entre especificaciones y tareas.
 * `speckit-implement`: Ejecucion rigurosa del codigo guiada por tareas.
 * `speckit-git-*`: Gestion estandarizada de ramas y commits.
+
+---
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan:
+specs/001-multi-tenant-digital-menu/plan.md
+<!-- SPECKIT END -->
