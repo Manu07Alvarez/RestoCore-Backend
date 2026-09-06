@@ -1,0 +1,262 @@
+﻿openapi: 3.1.0
+info:
+  title: RestoCore Multi-Tenant Digital Menu & Operations API
+  version: 1.0.0
+  description: Public customer catalog, restaurant CMS, and operational kitchen API for RestoCore.
+servers:
+  - url: https://api.restocore.app
+    description: Production Cluster
+  - url: http://localhost:5000
+    description: Local Development
+
+paths:
+  /api/v1/tenants/{tenant_slug}/menu:
+    get:
+      summary: Retrieve complete public digital menu for a restaurant
+      description: Returns categories, active dishes, modifiers, and branding configuration for anonymous customer viewing.
+      parameters:
+        - name: tenant_slug
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "la-trattoria"
+        - name: table_token
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Cryptographic token identifying the dining table from QR code scan.
+      responses:
+        "200":
+          description: Complete digital menu catalog.
+          headers:
+            ETag:
+              schema:
+                type: string
+              description: Entity tag hash for CDN caching and 304 validation.
+            Cache-Control:
+              schema:
+                type: string
+              example: "public, max-age=60, stale-while-revalidate=300"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicMenuResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/kitchen/items/{item_id}/availability:
+    patch:
+      summary: Toggle menu item availability in real time
+      description: Operational endpoint used by kitchen staff to pause or resume dishes.
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: item_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - is_available
+              properties:
+                is_available:
+                  type: boolean
+      responses:
+        "200":
+          description: Availability state updated.
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/admin/tables/{table_id}/qr:
+    get:
+      summary: Generate dynamic vector or raster QR code for a table
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: table_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: format
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [svg, png]
+            default: svg
+      responses:
+        "200":
+          description: Rendered QR code image.
+          content:
+            image/svg+xml:
+              schema:
+                type: string
+            image/png:
+              schema:
+                type: string
+                format: binary
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /api/v1/admin/tenants:
+    post:
+      summary: Provision a new restaurant tenant
+      description: Platform administration endpoint restricted to SuperAdmin.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTenantRequest"
+      responses:
+        "201":
+          description: Tenant provisioned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TenantSummary"
+        "409":
+          description: Tenant slug or custom domain already taken.
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid authentication credentials.
+    Forbidden:
+      description: Action denied by OPA policy or tenant boundary mismatch.
+    NotFound:
+      description: The requested resource or tenant was not found.
+
+  schemas:
+    PublicMenuResponse:
+      type: object
+      required:
+        - tenant_name
+        - tenant_slug
+        - branding
+        - categories
+      properties:
+        tenant_name:
+          type: string
+        tenant_slug:
+          type: string
+        table_number:
+          type: integer
+          nullable: true
+        branding:
+          type: object
+          properties:
+            primary_color:
+              type: string
+            logo_url:
+              type: string
+            font_family:
+              type: string
+            layout_mode:
+              type: string
+        categories:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicCategory"
+
+    PublicCategory:
+      type: object
+      required:
+        - id
+        - name
+        - items
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PublicMenuItem"
+
+    PublicMenuItem:
+      type: object
+      required:
+        - id
+        - name
+        - base_price
+        - is_available
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+        base_price:
+          type: number
+        is_available:
+          type: boolean
+        image_url:
+          type: string
+          nullable: true
+        allergens:
+          type: array
+          items:
+            type: string
+        dietary_labels:
+          type: array
+          items:
+            type: string
+
+    CreateTenantRequest:
+      type: object
+      required:
+        - name
+        - slug
+        - admin_email
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        admin_email:
+          type: string
+          format: email
+        custom_domain:
+          type: string
+          nullable: true
+
+    TenantSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        status:
+          type: string
