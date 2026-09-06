@@ -1,4 +1,4 @@
-﻿# Tasks: Multi-Tenant Digital Menu & Operations Platform (QR-Based)
+# Tasks: Multi-Tenant Digital Menu & Operations Platform (QR-Based)
 
 **Input**: Design documents from `specs/001-multi-tenant-digital-menu/`
 **Prerequisites**: `plan.md`, `spec.md`, `research.md`, `data-model.md`, `contracts/openapi.yaml`, `quickstart.md`
@@ -18,11 +18,11 @@
 
 **Purpose**: Solution initialization, project dependencies, and local container infrastructure.
 
-- [ ] T001 Initialize .NET 9 solution and project structure in `src/RestoCore.Domain/`, `src/RestoCore.Application/`, `src/RestoCore.Infrastructure/`, `src/RestoCore.Api/`
-- [ ] T002 [P] Initialize test projects in `tests/RestoCore.UnitTests/`, `tests/RestoCore.IntegrationTests/`, `tests/RestoCore.SecurityTests/`
-- [ ] T003 [P] Add NuGet packages for EF Core Npgsql, OpenTelemetry, QRCoder, SkiaSharp, FluentValidation, and Testcontainers across project files
-- [ ] T004 Create Docker Compose configuration for local dependencies in `docker-compose.dev.yml` (PostgreSQL 16, Redis 7, OPA)
-- [ ] T005 [P] Create initial environment configuration template in `src/RestoCore.Api/appsettings.json` and `src/RestoCore.Api/appsettings.Development.json`
+- [x] T001 Initialize .NET 9 solution and project structure in `src/RestoCore.Domain/`, `src/RestoCore.Application/`, `src/RestoCore.Infrastructure/`, `src/RestoCore.Api/`
+- [x] T002 [P] Initialize test projects in `tests/RestoCore.UnitTests/`, `tests/RestoCore.IntegrationTests/`, `tests/RestoCore.SecurityTests/`
+- [x] T003 [P] Add NuGet packages for EF Core Npgsql, OpenTelemetry, QRCoder, SkiaSharp, FluentValidation, and Testcontainers across project files
+- [x] T004 Create Docker Compose configuration for local dependencies in `docker-compose.dev.yml` (PostgreSQL 16, Redis 7, OPA)
+- [x] T005 [P] Create initial environment configuration template in `src/RestoCore.Api/appsettings.json` and `src/RestoCore.Api/appsettings.Development.json`
 
 ---
 
@@ -31,14 +31,14 @@
 **Purpose**: Core multi-tenancy, database context, authorization, and telemetry infrastructure.
 **Critical**: No user story implementation can begin until this foundation is complete.
 
-- [ ] T006 Create base domain entity classes and tenant scoped interface in `src/RestoCore.Domain/Common/BaseEntity.cs` and `src/RestoCore.Domain/Common/ITenantScopedEntity.cs`
-- [ ] T007 Implement ambient tenant context accessor in `src/RestoCore.Application/Common/Interfaces/ITenantContext.cs` and `src/RestoCore.Infrastructure/MultiTenancy/TenantContext.cs`
-- [ ] T008 Implement cascading tenant resolution middleware in `src/RestoCore.Infrastructure/MultiTenancy/TenantResolutionMiddleware.cs`
-- [ ] T009 Create Entity Framework Core database context with multi-tenant Global Query Filters in `src/RestoCore.Infrastructure/Persistence/ApplicationDbContext.cs`
-- [ ] T010 Implement declarative Open Policy Agent client and handler in `src/RestoCore.Infrastructure/Authorization/OpaAuthorizationHandler.cs` and `src/RestoCore.Infrastructure/Authorization/OpaClient.cs`
-- [ ] T011 [P] Configure OpenTelemetry tracing, metrics, and tenant baggage enrichment in `src/RestoCore.Infrastructure/Telemetry/OpenTelemetryExtensions.cs`
-- [ ] T012 [P] Implement global structured exception handler middleware in `src/RestoCore.Api/Middlewares/GlobalExceptionHandler.cs`
-- [ ] T013 Configure ASP.NET Core middleware pipeline and service container in `src/RestoCore.Api/Program.cs`
+- [x] T006 Create base domain entity classes and tenant scoped interface in `src/RestoCore.Domain/Common/BaseEntity.cs` and `src/RestoCore.Domain/Common/ITenantScopedEntity.cs`
+- [x] T007 Implement ambient tenant context accessor in `src/RestoCore.Application/Common/Interfaces/ITenantContext.cs` and `src/RestoCore.Infrastructure/MultiTenancy/TenantContext.cs`
+- [x] T008 Implement cascading tenant resolution middleware in `src/RestoCore.Infrastructure/MultiTenancy/TenantResolutionMiddleware.cs`
+- [x] T009 Create Entity Framework Core database context with multi-tenant Global Query Filters in `src/RestoCore.Infrastructure/Persistence/ApplicationDbContext.cs`
+- [x] T010 Implement declarative Open Policy Agent client and handler in `src/RestoCore.Infrastructure/Authorization/OpaAuthorizationHandler.cs` and `src/RestoCore.Infrastructure/Authorization/OpaClient.cs`
+- [x] T011 [P] Configure OpenTelemetry tracing, metrics, and tenant baggage enrichment in `src/RestoCore.Infrastructure/Telemetry/OpenTelemetryExtensions.cs`
+- [x] T012 [P] Implement global structured exception handler middleware in `src/RestoCore.Api/Middlewares/GlobalExceptionHandler.cs`
+- [x] T013 Configure ASP.NET Core middleware pipeline and service container in `src/RestoCore.Api/Program.cs`
 
 ---
 
@@ -52,13 +52,13 @@
 - [ ] T015 [P] [US1] Write integration test verifying ETag cache validation (304 Not Modified) in `tests/RestoCore.IntegrationTests/Endpoints/PublicMenuCacheTests.cs`
 
 ### Implementation for User Story 1
-- [ ] T016 [P] [US1] Implement Tenant entity and BrandingConfig value object in `src/RestoCore.Domain/Entities/Tenant.cs` and `src/RestoCore.Domain/ValueObjects/BrandingConfig.cs`
-- [ ] T017 [P] [US1] Implement Category entity in `src/RestoCore.Domain/Entities/Category.cs`
-- [ ] T018 [P] [US1] Implement MenuItem, ModifierGroup, and ModifierOption entities in `src/RestoCore.Domain/Entities/MenuItem.cs`, `src/RestoCore.Domain/Entities/ModifierGroup.cs`, and `src/RestoCore.Domain/Entities/ModifierOption.cs`
-- [ ] T019 [US1] Configure EF Core entity mappings, JSONB columns, and GIN indexes in `src/RestoCore.Infrastructure/Persistence/Configurations/TenantConfiguration.cs` and `src/RestoCore.Infrastructure/Persistence/Configurations/MenuConfiguration.cs`
-- [ ] T020 [US1] Create and apply initial database migration in `src/RestoCore.Infrastructure/Persistence/Migrations/`
-- [ ] T021 [US1] Implement public menu query handler and DTOs in `src/RestoCore.Application/Features/PublicMenu/Queries/GetPublicMenuQuery.cs` and `src/RestoCore.Application/Features/PublicMenu/DTOs/PublicMenuResponse.cs`
-- [ ] T022 [US1] Implement public menu minimal API endpoint with ETag and Cache-Control headers in `src/RestoCore.Api/Endpoints/PublicMenuEndpoints.cs`
+- [x] T016 [P] [US1] Implement Tenant entity and BrandingConfig value object in `src/RestoCore.Domain/Entities/Tenant.cs` and `src/RestoCore.Domain/ValueObjects/BrandingConfig.cs`
+- [x] T017 [P] [US1] Implement Category entity in `src/RestoCore.Domain/Entities/Category.cs`
+- [x] T018 [P] [US1] Implement MenuItem, ModifierGroup, and ModifierOption entities in `src/RestoCore.Domain/Entities/MenuItem.cs`, `src/RestoCore.Domain/Entities/ModifierGroup.cs`, and `src/RestoCore.Domain/Entities/ModifierOption.cs`
+- [x] T019 [US1] Configure EF Core entity mappings, JSONB columns, and GIN indexes in `src/RestoCore.Infrastructure/Persistence/Configurations/TenantConfiguration.cs` and `src/RestoCore.Infrastructure/Persistence/Configurations/MenuConfiguration.cs`
+- [x] T020 [US1] Create and apply initial database migration in `src/RestoCore.Infrastructure/Persistence/Migrations/`
+- [x] T021 [US1] Implement public menu query handler and DTOs in `src/RestoCore.Application/Features/PublicMenu/Queries/GetPublicMenuQuery.cs` and `src/RestoCore.Application/Features/PublicMenu/DTOs/PublicMenuResponse.cs`
+- [x] T022 [US1] Implement public menu minimal API endpoint with ETag and Cache-Control headers in `src/RestoCore.Api/Endpoints/PublicMenuEndpoints.cs`
 
 ---
 
@@ -68,15 +68,15 @@
 **Independent Test**: Authenticate as `TenantAdmin`, create a category and dish via API, and verify that the new items appear in the tenant catalog and cannot be accessed by other tenants.
 
 ### Tests for User Story 2
-- [ ] T023 [P] [US2] Write unit tests for category and menu item domain validation rules in `tests/RestoCore.UnitTests/Domain/MenuValidationTests.cs`
+- [x] T023 [P] [US2] Write unit tests for category and menu item domain validation rules in `tests/RestoCore.UnitTests/Domain/MenuValidationTests.cs`
 - [ ] T024 [P] [US2] Write integration tests for CMS category and item CRUD operations in `tests/RestoCore.IntegrationTests/Endpoints/AdminCatalogEndpointsTests.cs`
 
 ### Implementation for User Story 2
-- [ ] T025 [P] [US2] Implement category commands and validators in `src/RestoCore.Application/Features/Categories/Commands/CreateCategoryCommand.cs` and `src/RestoCore.Application/Features/Categories/Validators/CreateCategoryValidator.cs`
-- [ ] T026 [P] [US2] Implement menu item commands and validators in `src/RestoCore.Application/Features/MenuItems/Commands/CreateMenuItemCommand.cs` and `src/RestoCore.Application/Features/MenuItems/Validators/CreateMenuItemValidator.cs`
-- [ ] T027 [US2] Implement modifier group management commands in `src/RestoCore.Application/Features/MenuItems/Commands/ManageModifiersCommand.cs`
-- [ ] T028 [US2] Implement backoffice branding management command in `src/RestoCore.Application/Features/Tenants/Commands/UpdateBrandingCommand.cs`
-- [ ] T029 [US2] Implement backoffice administration endpoints in `src/RestoCore.Api/Endpoints/AdminCatalogEndpoints.cs` with OPA policy protection
+- [x] T025 [P] [US2] Implement category commands and validators in `src/RestoCore.Application/Features/Categories/Commands/CreateCategoryCommand.cs` and `src/RestoCore.Application/Features/Categories/Validators/CreateCategoryValidator.cs`
+- [x] T026 [P] [US2] Implement menu item commands and validators in `src/RestoCore.Application/Features/MenuItems/Commands/CreateMenuItemCommand.cs` and `src/RestoCore.Application/Features/MenuItems/Validators/CreateMenuItemValidator.cs`
+- [x] T027 [US2] Implement modifier group management commands in `src/RestoCore.Application/Features/MenuItems/Commands/ManageModifiersCommand.cs`
+- [x] T028 [US2] Implement backoffice branding management command in `src/RestoCore.Application/Features/Tenants/Commands/UpdateBrandingCommand.cs`
+- [x] T029 [US2] Implement backoffice administration endpoints in `src/RestoCore.Api/Endpoints/AdminCatalogEndpoints.cs` with OPA policy protection
 
 ---
 
@@ -86,12 +86,12 @@
 **Independent Test**: Authenticate as `KitchenStaff`, issue `PATCH /api/v1/kitchen/items/{id}/availability`, verify status is updated, and confirm that attempts to edit prices return 403 Forbidden.
 
 ### Tests for User Story 3
-- [ ] T030 [P] [US3] Write unit test for availability state transitions in `tests/RestoCore.UnitTests/Domain/ItemAvailabilityStateTests.cs`
+- [x] T030 [P] [US3] Write unit test for availability state transitions in `tests/RestoCore.UnitTests/Domain/ItemAvailabilityStateTests.cs`
 - [ ] T031 [P] [US3] Write integration test verifying KitchenStaff permission boundaries in `tests/RestoCore.IntegrationTests/Endpoints/KitchenEndpointsTests.cs`
 
 ### Implementation for User Story 3
-- [ ] T032 [US3] Implement item availability toggle command and handler in `src/RestoCore.Application/Features/Kitchen/Commands/ToggleItemAvailabilityCommand.cs`
-- [ ] T033 [US3] Implement kitchen operational endpoint in `src/RestoCore.Api/Endpoints/KitchenEndpoints.cs` protected by OPA `KitchenStaff` role policy
+- [x] T032 [US3] Implement item availability toggle command and handler in `src/RestoCore.Application/Features/Kitchen/Commands/ToggleItemAvailabilityCommand.cs`
+- [x] T033 [US3] Implement kitchen operational endpoint in `src/RestoCore.Api/Endpoints/KitchenEndpoints.cs` protected by OPA `KitchenStaff` role policy
 - [ ] T034 [US3] Implement catalog cache invalidation hook upon item availability change in `src/RestoCore.Infrastructure/Caching/CatalogCacheInvalidator.cs`
 
 ---
@@ -105,8 +105,8 @@
 - [ ] T035 [P] [US4] Write integration test for tenant provisioning and slug collision prevention in `tests/RestoCore.IntegrationTests/Endpoints/TenantProvisioningTests.cs`
 
 ### Implementation for User Story 4
-- [ ] T036 [US4] Implement tenant provisioning command and validator in `src/RestoCore.Application/Features/Tenants/Commands/ProvisionTenantCommand.cs` and `src/RestoCore.Application/Features/Tenants/Validators/ProvisionTenantValidator.cs`
-- [ ] T037 [US4] Implement tenant administration endpoints in `src/RestoCore.Api/Endpoints/AdminTenantEndpoints.cs` restricted to `SuperAdmin`
+- [x] T036 [US4] Implement tenant provisioning command and validator in `src/RestoCore.Application/Features/Tenants/Commands/ProvisionTenantCommand.cs` and `src/RestoCore.Application/Features/Tenants/Validators/ProvisionTenantValidator.cs`
+- [x] T037 [US4] Implement tenant administration endpoints in `src/RestoCore.Api/Endpoints/AdminTenantEndpoints.cs` restricted to `SuperAdmin`
 - [ ] T038 [US4] Implement custom domain and subdomain lookup caching in `src/RestoCore.Infrastructure/MultiTenancy/TenantLookupService.cs`
 
 ---
@@ -117,14 +117,14 @@
 **Independent Test**: Call `GET /api/v1/admin/tables/{id}/qr?format=svg` and verify that a valid vector SVG payload encoding the table menu URL is returned.
 
 ### Tests for User Story 5
-- [ ] T039 [P] [US5] Write unit tests for QR code encoding and URL construction in `tests/RestoCore.UnitTests/Qr/QrCodeServiceTests.cs`
+- [x] T039 [P] [US5] Write unit tests for QR code encoding and URL construction in `tests/RestoCore.UnitTests/Qr/QrCodeServiceTests.cs`
 - [ ] T040 [P] [US5] Write integration tests for QR code generation endpoint in `tests/RestoCore.IntegrationTests/Endpoints/QrCodeEndpointsTests.cs`
 
 ### Implementation for User Story 5
-- [ ] T041 [P] [US5] Implement Table domain entity in `src/RestoCore.Domain/Entities/Table.cs`
-- [ ] T042 [US5] Configure EF Core Table entity configuration and migration in `src/RestoCore.Infrastructure/Persistence/Configurations/TableConfiguration.cs`
-- [ ] T043 [US5] Implement vector SVG and raster PNG QR generation service using QRCoder and SkiaSharp in `src/RestoCore.Infrastructure/Qr/QrCodeService.cs`
-- [ ] T044 [US5] Implement table QR query and endpoint in `src/RestoCore.Application/Features/QrCodes/Queries/GetTableQrQuery.cs` and `src/RestoCore.Api/Endpoints/AdminTableEndpoints.cs`
+- [x] T041 [P] [US5] Implement Table domain entity in `src/RestoCore.Domain/Entities/Table.cs`
+- [x] T042 [US5] Configure EF Core Table entity configuration and migration in `src/RestoCore.Infrastructure/Persistence/Configurations/TableConfiguration.cs`
+- [x] T043 [US5] Implement vector SVG and raster PNG QR generation service using QRCoder and SkiaSharp in `src/RestoCore.Infrastructure/Qr/QrCodeService.cs`
+- [x] T044 [US5] Implement table QR query and endpoint in `src/RestoCore.Application/Features/QrCodes/Queries/GetTableQrQuery.cs` and `src/RestoCore.Api/Endpoints/AdminTableEndpoints.cs`
 
 ---
 
@@ -134,7 +134,7 @@
 
 - [ ] T045 Implement automated cross-tenant security test suite using Testcontainers in `tests/RestoCore.SecurityTests/MultiTenancy/CrossTenantIsolationTests.cs`
 - [ ] T046 [P] Verify OpenTelemetry spans export with mandatory `tenant.id` enrichment in `tests/RestoCore.IntegrationTests/Telemetry/OpenTelemetryEnrichmentTests.cs`
-- [ ] T047 [P] Configure healthcheck endpoints (`/healthz`, `/ready`) checking PostgreSQL, Redis, and OPA connectivity in `src/RestoCore.Api/Endpoints/HealthEndpoints.cs`
+- [x] T047 [P] Configure healthcheck endpoints (`/healthz`, `/ready`) checking PostgreSQL, Redis, and OPA connectivity in `src/RestoCore.Api/Endpoints/HealthEndpoints.cs`
 - [ ] T048 Update developer documentation and execute full test suite verification in `README.md` and `specs/001-multi-tenant-digital-menu/quickstart.md`
 
 ---
