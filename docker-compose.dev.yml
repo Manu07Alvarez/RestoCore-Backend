@@ -1,4 +1,4 @@
-﻿services:
+services:
   postgres:
     image: postgres:16-alpine
     container_name: restocore-postgres-dev
@@ -27,6 +27,32 @@
       timeout: 5s
       retries: 5
 
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest
+    container_name: restocore-seaweedfs-dev
+    command: "server -s3 -filer -ip.bind=0.0.0.0"
+    ports:
+      - "8333:8333" # S3 gateway
+      - "8888:8888" # Filer HTTP
+      - "9333:9333" # Master
+    volumes:
+      - seaweedfs_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "echo 'SELECT 1;' || exit 0"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  create-bucket:
+    image: curlimages/curl:latest
+    container_name: restocore-create-bucket-dev
+    depends_on:
+      seaweedfs:
+        condition: service_started
+    command: >
+      sh -c "sleep 3 && curl -s -X PUT http://seaweedfs:8333/restocore-images || exit 0"
+    restart: "no"
+
   opa:
     image: openpolicyagent/opa:latest
     container_name: restocore-opa-dev
@@ -42,3 +68,4 @@
 
 volumes:
   postgres_dev_data:
+  seaweedfs_data:
