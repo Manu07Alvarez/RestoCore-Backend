@@ -8,6 +8,7 @@ using RestoCore.Infrastructure.Authorization;
 using RestoCore.Infrastructure.MultiTenancy;
 using RestoCore.Infrastructure.Persistence;
 using RestoCore.Infrastructure.Qr;
+using RestoCore.Infrastructure.Storage;
 using RestoCore.Infrastructure.Telemetry;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,6 +17,13 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
+
+// Authentication & Authorization
+builder.Services.AddAuthentication().AddJwtBearer(options =>
+{
+    // Local dev configuration
+});
 
 // MediatR
 builder.Services.AddMediatR(cfg =>
@@ -28,6 +36,7 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 
 // Services
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
+builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
 
 // Persistence (PostgreSQL with JSONB & GIN support)
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -81,6 +90,7 @@ app.MapAdminCatalogEndpoints();
 app.MapKitchenEndpoints();
 app.MapAdminTenantEndpoints();
 app.MapAdminTableEndpoints();
+app.MapStorageEndpoints();
 
 app.Run();
 

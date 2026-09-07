@@ -1,35 +1,23 @@
-# Políticas de Autorización Declarativa para RestoCore (Open Policy Agent - OPA)
-# Especificación bajo el estándar Security-as-Code (ADR-0006)
-
-package restocore.authz
+﻿package restocore.authz
 
 import future.keywords.in
+import future.keywords.if
 
-# Principio de Menor Privilegio: Denegación por defecto
-default allow = false
+default allow := false
 
-# -----------------------------------------------------------------------------
-# 1. Acceso Público Libre (Sin Autenticación)
-# Únicamente la lectura de la Carta QR digital para clientes
-# -----------------------------------------------------------------------------
-allow {
+# Public Menu Access
+allow if {
     input.method == "GET"
     input.path = ["api", "v1", "tenants", _, "menu"]
 }
 
-# -----------------------------------------------------------------------------
-# 2. SuperAdmin (Administración Global del SaaS)
-# Acceso ilimitado a nivel de plataforma
-# -----------------------------------------------------------------------------
-allow {
+# Super Admin Global Access
+allow if {
     "super_admin" in input.user.roles
 }
 
-# -----------------------------------------------------------------------------
-# 3. Dueño / Administrador de Tenant (`owner` / `tenant_admin`)
-# Gestión total dentro de su propio restaurante (Aislamiento Multi-Tenant)
-# -----------------------------------------------------------------------------
-allow {
+# Tenant Owner or Administrator Access
+allow if {
     input.user.tenant_id == input.resource.tenant_id
     some role in input.user.roles
     role in ["owner", "tenant_admin"]
@@ -49,26 +37,17 @@ allow {
     ]
 }
 
-# -----------------------------------------------------------------------------
-# 4. Personal de Cocina (`cook` / `kitchen_staff`)
-# Visión limitada al Kitchen Display System (KDS) de su Tenant
-# -----------------------------------------------------------------------------
-allow {
+# Kitchen Staff Operational Access
+allow if {
     input.user.tenant_id == input.resource.tenant_id
     some role in input.user.roles
     role in ["cook", "kitchen_staff"]
     input.method in ["GET", "PATCH"]
-    input.path[0] == "api"
-    input.path[1] == "v1"
-    input.path[2] == "orders"
-    input.action in ["read_kitchen_orders", "update_order_status"]
+    input.action in ["read_kitchen_orders", "update_order_status", "kitchen_stock"]
 }
 
-# -----------------------------------------------------------------------------
-# 5. Mozo / Personal de Salón (`waiter`)
-# Operación limitada a toma de comandas y estado de mesas de su Tenant
-# -----------------------------------------------------------------------------
-allow {
+# Waiter Hall Access
+allow if {
     input.user.tenant_id == input.resource.tenant_id
     some role in input.user.roles
     role == "waiter"

@@ -1,4 +1,4 @@
-﻿# Directrices de Operacion para Agentes de IA en resto-core-back
+# Directrices de Operacion para Agentes de IA en resto-core-back
 
 Este documento define las normas operativas, metodologias y estandares tecnicos para agentes de inteligencia artificial que asistan en el desarrollo y mantenimiento del backend de **RestoCore** (`resto-core-back`).
 
@@ -47,5 +47,5 @@ El agente debe ejecutar y seguir los flujos correspondientes a las habilidades d
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/001-multi-tenant-digital-menu/plan.md
+specs/002-docker-dev-testing/plan.md
 <!-- SPECKIT END -->

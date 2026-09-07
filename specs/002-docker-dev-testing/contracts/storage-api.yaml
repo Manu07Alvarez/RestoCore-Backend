@@ -1,0 +1,71 @@
+openapi: 3.1.0
+info:
+  title: RestoCore Asset Storage & Environment Health API
+  version: 1.0.0
+  description: Endpoints for decoupled image pre-signing (SeaweedFS S3) and infrastructure readiness verification.
+paths:
+  /api/v1/admin/images/presigned-url:
+    post:
+      summary: Generate an S3-compatible pre-signed upload URL for SeaweedFS
+      description: Returns a time-limited pre-signed PUT URL enabling direct binary upload to SeaweedFS (ADR-0004).
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - file_name
+                - content_type
+                - category
+              properties:
+                file_name:
+                  type: string
+                  example: "ravioles.webp"
+                content_type:
+                  type: string
+                  enum: [image/jpeg, image/png, image/webp]
+                  example: "image/webp"
+                category:
+                  type: string
+                  enum: [dishes, branding]
+                  example: "dishes"
+      responses:
+        "200":
+          description: Pre-signed URL generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - upload_url
+                  - public_url
+                  - expires_at
+                properties:
+                  upload_url:
+                    type: string
+                    format: uri
+                  public_url:
+                    type: string
+                    format: uri
+                  expires_at:
+                    type: string
+                    format: date-time
+        "400":
+          description: Invalid file name or unsupported content type.
+        "401":
+          description: Unauthorized.
+        "403":
+          description: Forbidden by OPA policy.
+
+  /ready:
+    get:
+      summary: Environment and infrastructure readiness verification
+      description: Performs deep ping against PostgreSQL, Redis, SeaweedFS, and OPA.
+      responses:
+        "200":
+          description: All infrastructure dependencies are healthy and accepting connections.
+        "503":
+          description: One or more infrastructure dependencies are unhealthy or disconnected.
