@@ -47,5 +47,5 @@ El agente debe ejecutar y seguir los flujos correspondientes a las habilidades d
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/002-docker-dev-testing/plan.md
+specs/003-k6-aspire-swagger/plan.md
 <!-- SPECKIT END -->

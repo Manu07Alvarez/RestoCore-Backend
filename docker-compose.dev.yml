@@ -66,6 +66,18 @@ services:
     ports:
       - "8181:8181"
 
+  aspire-dashboard:
+    image: mcr.microsoft.com/dotnet/aspire-dashboard:latest
+    container_name: restocore-aspire-dashboard-dev
+    environment:
+      - DOTNET_DASHBOARD_UNSECURED_ALLOW_ANONYMOUS=true
+      - DASHBOARD__OTLP__AUTHMODE=Unsecured
+    ports:
+      - "18888:18888" # Dashboard Web UI
+      - "4317:18889"   # OTLP gRPC receiver (Aspire container listens on 18889)
+      - "4318:18890"   # OTLP HTTP receiver (Aspire container listens on 18890)
+    restart: unless-stopped
+
 volumes:
   postgres_dev_data:
   seaweedfs_data:

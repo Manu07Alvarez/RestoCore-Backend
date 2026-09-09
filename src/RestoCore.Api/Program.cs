@@ -15,7 +15,31 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to container
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "RestoCore Backend API",
+        Version = "v1",
+        Description = "Multi-tenant restaurant digital menu and kitchen operations backend API."
+    });
+
+    var securityScheme = new Microsoft.OpenApi.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "Enter JWT Bearer token format: Bearer {your token}",
+        In = Microsoft.OpenApi.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    };
+
+    c.AddSecurityDefinition("Bearer", securityScheme);
+    c.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
+    {
+        { new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document), new List<string>() }
+    });
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 

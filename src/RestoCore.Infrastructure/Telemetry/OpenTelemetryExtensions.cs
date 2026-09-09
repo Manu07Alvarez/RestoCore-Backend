@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Infrastructure.Telemetry;
+namespace RestoCore.Infrastructure.Telemetry;
 
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -30,6 +30,7 @@ public static class OpenTelemetryExtensions
                     {
                         options.RecordException = true;
                     })
+                    .AddHttpClientInstrumentation()
                     .AddNpgsql();
 
                 if (!string.IsNullOrEmpty(otlpEndpoint))

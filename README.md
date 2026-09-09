@@ -13,7 +13,7 @@ El backend se rige estrictamente por los principios definidos en la Constitucion
 3. **Persistencia Relacional Flexible:** Base de datos PostgreSQL 16+ con soporte de esquemas semiestructurados mediante columnas `JSONB` e indices `GIN` (`ADR-0003`).
 4. **Carga Asincrona Desacoplada de Archivos:** El backend emite URLs pre-firmadas temporales hacia SeaweedFS (`ADR-0004`).
 5. **Seguridad y Autorizacion Declarativa:** Politicas de control de acceso mediante Open Policy Agent (OPA / Rego) con resolucion de contexto (`ADR-0006`).
-6. **Observabilidad Distribuida:** OpenTelemetry instrumentado con enriquecimiento automatico de `tenant.id` en trazas, metricas y logs estructurados.
+6. **Observabilidad Distribuida:** OpenTelemetry instrumentado con enriquecimiento automatico de `tenant.id` en trazas, metricas y logs estructurados visualizados en **.NET Aspire Dashboard**.
 
 ---
 
@@ -23,68 +23,74 @@ El backend se rige estrictamente por los principios definidos en la Constitucion
 resto-core-back/
 +-- .agents/skills/              # Spec-Kit workflows y directrices SDD
 +-- .specify/memory/             # Constitucion del proyecto
-+-- scripts/                     # Scripts de automatizacion y verificacion (verify-docker-env.ps1)
++-- scripts/
+|   +-- k6/                      # Scripts k6 de pruebas de carga, estres y validacion de ETag
+|   +-- run-stress-tests.ps1     # Runner automatizado k6 (CLI local o Docker fallback)
+|   +-- verify-docker-env.ps1    # Verificacion integral de contenedores y suites de prueba
 +-- specs/
-|   +-- 001-multi-tenant-digital-menu/ # Especificacion, plan, tareas y contratos
+|   +-- 001-multi-tenant-digital-menu/ # Especificacion inicial de carta digital
 |   +-- 002-docker-dev-testing/        # Entorno Docker controlado y tests E2E
+|   +-- 003-k6-aspire-swagger/         # Pruebas de estres k6, Aspire Dashboard y Swagger UI
 |   +-- policies/                # Politicas de autorizacion Rego para OPA
 +-- src/
 |   +-- RestoCore.Domain/        # Entidades de dominio, Value Objects y contratos
 |   +-- RestoCore.Application/   # Casos de uso (MediatR), comandos, queries y validadores
-|   +-- RestoCore.Infrastructure/# Persistencia EF Core, migraciones, SeaweedFS, OPA client, QR y telemetria
-|   +-- RestoCore.Api/           # Endpoints Minimal APIs, middlewares y configuracion
+|   +-- RestoCore.Infrastructure/# Persistencia EF Core, SeaweedFS, OPA, telemetria OTLP y QR
+|   +-- RestoCore.Api/           # Endpoints Minimal APIs, middlewares, Swagger UI y configuracion
 +-- tests/
-    +-- RestoCore.UnitTests/     # Pruebas unitarias de dominio, validaciones y resolucion
+    +-- RestoCore.UnitTests/     # Pruebas unitarias de dominio y validaciones
     +-- RestoCore.IntegrationTests/ # Pruebas de integracion contra stack de contenedores
     +-- RestoCore.SecurityTests/ # Pruebas automatizadas de aislamiento multi-tenant en PostgreSQL
 ```
 
 ---
 
-## Ejecucion Local y Pruebas
+## Ejecucion Local y Herramientas de Desarrollo
 
 ### Prerrequisitos
 - .NET 10 SDK (o .NET 9+)
 - Docker y Docker Compose
 
 ### Infraestructura Local en Docker
-El entorno de desarrollo y pruebas utiliza Docker Compose para orquestar todos los servicios requeridos:
-- **PostgreSQL 16**: Base de datos principal relacional con soporte `JSONB`.
-- **Redis 7**: Cache de alta velocidad y encolado de eventos.
-- **SeaweedFS**: Almacenamiento desacoplado compatible con S3 (puerto S3 8333) y bucket auto-inicializado `restocore-images`.
-- **Open Policy Agent (OPA)**: Motor de politicas desacoplado para autorizacion declarativa.
+El entorno de desarrollo orquesta todos los servicios requeridos:
+- **PostgreSQL 16**: Base de datos relacional principal con soporte `JSONB` (puerto `5432`).
+- **Redis 7**: Cache de alta velocidad (puerto `6379`).
+- **SeaweedFS**: Almacenamiento desacoplado S3 (puertos `8333`, `8888`, `9333`) y bucket auto-inicializado `restocore-images`.
+- **Open Policy Agent (OPA)**: Motor de politicas desacoplado para autorizacion declarativa (puerto `8181`).
+- **.NET Aspire Dashboard**: Visualizador en tiempo real de trazas distribuidas OTLP, metricas y logs estructurados (Web UI en puerto `18888`, receptor OTLP en puerto `4317`).
 
-Iniciar la infraestructura:
+Iniciar el stack completo:
 ```bash
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-### Script de Verificacion Automatizada (Entorno y Suites de Pruebas)
-Para verificar de forma integral la salud del stack, aplicar migraciones y ejecutar todas las suites de prueba:
-```powershell
-./scripts/verify-docker-env.ps1
-```
+Acceder al panel de telemetria en tiempo real:
+- **Aspire Dashboard**: `http://localhost:18888`
 
-### Migraciones de Base de Datos
-Aplicar el esquema relacional en PostgreSQL contenedorizado:
-```bash
-dotnet ef database update --project src/RestoCore.Infrastructure/RestoCore.Infrastructure.csproj --startup-project src/RestoCore.Api/RestoCore.Api.csproj
-```
-
-### Ejecutar Pruebas Automatizadas
-
-```bash
-# Ejecutar todas las suites de pruebas unitarias, integracion y seguridad
-dotnet test tests/RestoCore.UnitTests/RestoCore.UnitTests.csproj
-dotnet test tests/RestoCore.IntegrationTests/RestoCore.IntegrationTests.csproj
-dotnet test tests/RestoCore.SecurityTests/RestoCore.SecurityTests.csproj
-```
-
-### Ejecutar API Backend
+### Ejecutar API Backend y Swagger UI
 ```bash
 dotnet run --project src/RestoCore.Api/RestoCore.Api.csproj
 ```
 
-- Explorador OpenAPI / Scalar: `http://localhost:5000/openapi/v1.json`
-- Chequeo de salud basico (Liveness): `http://localhost:5000/healthz`
-- Chequeo de dependencias profundas (Readiness): `http://localhost:5000/ready`
+- **Swagger UI interactivo (Development)**: `http://localhost:5000/swagger`
+- **Contrato OpenAPI**: `http://localhost:5000/swagger/v1/swagger.json`
+- **Liveness Probe**: `http://localhost:5000/healthz`
+- **Readiness Probe**: `http://localhost:5000/ready`
+
+### Pruebas de Carga y Estres con k6
+Ejecuta las pruebas de rendimiento validando que las respuestas cumplan los presupuestos de latencia (<500ms dinamico, <150ms p95 con ETag):
+```powershell
+# Carga base (20 VUs)
+./scripts/run-stress-tests.ps1 -Scenario public-menu-load
+
+# Validacion de cache ETag 304 (<150ms p95)
+./scripts/run-stress-tests.ps1 -Scenario etag-cache-test
+
+# Estres con rampa hasta 100 VUs
+./scripts/run-stress-tests.ps1 -Scenario public-menu-stress
+```
+
+### Ejecutar Suites de Pruebas Automatizadas
+```bash
+dotnet test RestoCore.slnx
+```

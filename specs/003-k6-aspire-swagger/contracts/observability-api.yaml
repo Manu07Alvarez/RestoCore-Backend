@@ -1,0 +1,28 @@
+﻿openapi: 3.1.0
+info:
+  title: RestoCore Observability and API Documentation Contract
+  version: 1.0.0
+  description: OpenAPI metadata and developer tooling endpoints in Development environment.
+paths:
+  /swagger/v1/swagger.json:
+    get:
+      summary: OpenAPI specification document
+      description: Returns the compiled OpenAPI JSON specification for API exploration.
+      responses:
+        '200':
+          description: OpenAPI document JSON
+          content:
+            application/json:
+              schema:
+                type: object
+  /swagger/index.html:
+    get:
+      summary: Interactive Swagger UI
+      description: Interactive browser UI for testing endpoints and authenticating with Bearer JWT tokens.
+      responses:
+        '200':
+          description: Swagger UI HTML page
+          content:
+            text/html:
+              schema:
+                type: string
