@@ -5,6 +5,7 @@ using System.Diagnostics.Metrics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Npgsql;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
@@ -50,6 +51,16 @@ public static class OpenTelemetryExtensions
                 if (!string.IsNullOrEmpty(otlpEndpoint))
                 {
                     metrics.AddOtlpExporter(options =>
+                    {
+                        options.Endpoint = new Uri(otlpEndpoint);
+                    });
+                }
+            })
+            .WithLogging(logging =>
+            {
+                if (!string.IsNullOrEmpty(otlpEndpoint))
+                {
+                    logging.AddOtlpExporter(options =>
                     {
                         options.Endpoint = new Uri(otlpEndpoint);
                     });

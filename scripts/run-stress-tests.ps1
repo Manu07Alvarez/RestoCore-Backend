@@ -1,4 +1,4 @@
-﻿<#
+<#
 .SYNOPSIS
     Automated runner for k6 stress and load tests with Docker fallback.
 .DESCRIPTION
@@ -8,7 +8,7 @@
 
 [CmdletBinding()]
 param(
-    [ValidateSet("public-menu-load", "etag-cache-test", "public-menu-stress")]
+    [ValidateSet("public-menu-load", "etag-cache-test", "public-menu-stress", "all-endpoints-test")]
     [string]$Scenario = "public-menu-load",
     [string]$BaseUrl = "http://localhost:5000",
     [string]$TenantSlug = "test-restaurant"

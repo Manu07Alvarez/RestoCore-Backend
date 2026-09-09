@@ -62,6 +62,14 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
 
+// Caching (Redis)
+var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConfig;
+    options.InstanceName = "RestoCore:";
+});
+
 // Persistence (PostgreSQL with JSONB & GIN support)
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
 {
@@ -84,7 +92,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SuperAdminOnly", policy => policy.Requirements.Add(new OpaRequirement("manage_tenants")));
 });
 
-// Telemetry (OpenTelemetry)
+// Telemetry (OpenTelemetry Traces, Metrics & Structured Logging)
 builder.Services.AddRestoCoreTelemetry(builder.Configuration);
 
 // Exception Handling
@@ -103,6 +111,43 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<TenantResolutionMiddleware>();
+
+// Structured Execution Logging Middleware (correlates with Aspire Dashboard & OpenTelemetry traces)
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    var tenantContext = context.RequestServices.GetRequiredService<ITenantContext>();
+
+    logger.LogInformation("HTTP {Method} {Path} received for Tenant '{TenantSlug}' (TenantId: {TenantId})",
+        context.Request.Method,
+        context.Request.Path,
+        tenantContext.TenantSlug ?? "none",
+        tenantContext.TenantId?.ToString() ?? "none");
+
+    try
+    {
+        await next();
+        stopwatch.Stop();
+
+        logger.LogInformation("HTTP {Method} {Path} completed with Status {StatusCode} in {ElapsedMs}ms for Tenant '{TenantSlug}'",
+            context.Request.Method,
+            context.Request.Path,
+            context.Response.StatusCode,
+            stopwatch.ElapsedMilliseconds,
+            tenantContext.TenantSlug ?? "none");
+    }
+    catch (Exception ex)
+    {
+        stopwatch.Stop();
+        logger.LogError(ex, "HTTP {Method} {Path} failed after {ElapsedMs}ms for Tenant '{TenantSlug}'",
+            context.Request.Method,
+            context.Request.Path,
+            stopwatch.ElapsedMilliseconds,
+            tenantContext.TenantSlug ?? "none");
+        throw;
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
