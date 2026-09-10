@@ -3,7 +3,7 @@ namespace RestoCore.Application.Features.PublicMenu.Queries;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Application.Features.PublicMenu.DTOs;
@@ -33,7 +33,7 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
 
         if (tenant == null)
         {
-            throw new KeyNotFoundException($"Restaurante con slug '{request.TenantSlug}' no fue encontrado o está inactivo.");
+            throw new KeyNotFoundException($"Restaurante con slug '{request.TenantSlug}' no fue encontrado o estÃ¡ inactivo.");
         }
 
         int? tableNumber = null;

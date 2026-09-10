@@ -1,7 +1,8 @@
-﻿namespace RestoCore.Infrastructure.Persistence;
+namespace RestoCore.Infrastructure.Persistence;
 
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Distributed;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Domain.Common;
 using RestoCore.Domain.Entities;
@@ -9,11 +10,16 @@ using RestoCore.Domain.Entities;
 public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     private readonly ITenantContext _tenantContext;
+    private readonly IDistributedCache? _cache;
 
-    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options, ITenantContext tenantContext)
+    public ApplicationDbContext(
+        DbContextOptions<ApplicationDbContext> options,
+        ITenantContext tenantContext,
+        IDistributedCache? cache = null)
         : base(options)
     {
         _tenantContext = tenantContext;
+        _cache = cache;
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -48,7 +54,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
     public Guid CurrentTenantId => _tenantContext.TenantId ?? Guid.Empty;
 
-    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -73,6 +79,56 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
             }
         }
 
-        return base.SaveChangesAsync(cancellationToken);
+        List<Guid>? modifiedTenantIds = null;
+        if (_cache != null)
+        {
+            modifiedTenantIds = ChangeTracker.Entries()
+                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+                .Select(e => e.Entity switch
+                {
+                    ITenantScopedEntity tse => tse.TenantId,
+                    Tenant t => t.Id,
+                    _ => Guid.Empty
+                })
+                .Where(id => id != Guid.Empty)
+                .Distinct()
+                .ToList();
+        }
+
+        var result = await base.SaveChangesAsync(cancellationToken);
+
+        if (_cache != null && modifiedTenantIds != null && modifiedTenantIds.Count > 0)
+        {
+            var slugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrEmpty(_tenantContext.TenantSlug))
+            {
+                slugs.Add(_tenantContext.TenantSlug);
+            }
+
+            var dbSlugs = await Tenants.IgnoreQueryFilters()
+                .Where(t => modifiedTenantIds.Contains(t.Id))
+                .Select(t => t.Slug)
+                .ToListAsync(cancellationToken);
+
+            foreach (var s in dbSlugs)
+            {
+                slugs.Add(s);
+            }
+
+            foreach (var slug in slugs)
+            {
+                try
+                {
+                    await _cache.RemoveAsync($"menu_payload:{slug}:default", cancellationToken);
+                    await _cache.RemoveAsync($"menu_etag:{slug}:default", cancellationToken);
+                }
+                catch
+                {
+                    // Non-blocking cache eviction failure
+                }
+            }
+        }
+
+        return result;
     }
 }

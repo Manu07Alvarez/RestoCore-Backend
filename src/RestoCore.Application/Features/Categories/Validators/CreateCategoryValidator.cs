@@ -1,4 +1,4 @@
-namespace RestoCore.Application.Features.Categories.Validators;
+﻿namespace RestoCore.Application.Features.Categories.Validators;
 
 using FluentValidation;
 using RestoCore.Application.Features.Categories.Commands;

@@ -1,6 +1,6 @@
-namespace RestoCore.Api.Endpoints;
+﻿namespace RestoCore.Api.Endpoints;
 
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using Microsoft.AspNetCore.Mvc;
 using RestoCore.Application.Features.QrCodes.Queries;
 

@@ -1,7 +1,7 @@
-namespace RestoCore.Application.Features.Storage.Commands;
+﻿namespace RestoCore.Application.Features.Storage.Commands;
 
 using FluentValidation;
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using RestoCore.Application.Common.Interfaces;
 
 public record GeneratePresignedUploadCommand(

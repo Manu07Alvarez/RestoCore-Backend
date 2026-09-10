@@ -1,6 +1,6 @@
-namespace RestoCore.Application.Features.QrCodes.Queries;
+﻿namespace RestoCore.Application.Features.QrCodes.Queries;
 
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
 

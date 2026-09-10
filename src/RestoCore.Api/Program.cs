@@ -10,6 +10,7 @@ using RestoCore.Infrastructure.Persistence;
 using RestoCore.Infrastructure.Qr;
 using RestoCore.Infrastructure.Storage;
 using RestoCore.Infrastructure.Telemetry;
+using RestoCore.Application.Common.Mediator;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -49,11 +50,8 @@ builder.Services.AddAuthentication().AddJwtBearer(options =>
     // Local dev configuration
 });
 
-// MediatR
-builder.Services.AddMediatR(cfg =>
-{
-    cfg.RegisterServicesFromAssembly(typeof(GetPublicMenuQuery).Assembly);
-});
+// CQRS Mediator (MIT Permissive Implementation)
+builder.Services.AddApplicationMediator(typeof(GetPublicMenuQuery).Assembly);
 
 // Multi-Tenancy
 builder.Services.AddScoped<ITenantContext, TenantContext>();
@@ -77,6 +75,7 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
     options.UseNpgsql(connectionString, npgsqlOptions =>
     {
         npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+        npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
     });
 });
 builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());

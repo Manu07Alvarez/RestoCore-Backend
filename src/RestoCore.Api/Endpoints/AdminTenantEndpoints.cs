@@ -1,6 +1,6 @@
-namespace RestoCore.Api.Endpoints;
+﻿namespace RestoCore.Api.Endpoints;
 
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using RestoCore.Application.Features.Tenants.Commands;
 
 public static class AdminTenantEndpoints

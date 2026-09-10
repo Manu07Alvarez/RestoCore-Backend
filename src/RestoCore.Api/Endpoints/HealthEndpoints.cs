@@ -1,4 +1,4 @@
-namespace RestoCore.Api.Endpoints;
+﻿namespace RestoCore.Api.Endpoints;
 
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
