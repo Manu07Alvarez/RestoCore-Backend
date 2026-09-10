@@ -11,7 +11,7 @@ public static class AdminCatalogEndpoints
     public static IEndpointRouteBuilder MapAdminCatalogEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/admin")
-            .RequireAuthorization("OpaPolicy")
+            .RequireAuthorization("TenantAdminOnly")
             .WithTags("Admin - Catalog");
 
         group.MapPost("/categories", async (CreateCategoryCommand command, ISender sender) =>

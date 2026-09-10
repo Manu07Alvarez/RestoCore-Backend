@@ -1,9 +1,10 @@
-﻿namespace RestoCore.Api.Endpoints;
+namespace RestoCore.Api.Endpoints;
 
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Caching.Distributed;
 using RestoCore.Application.Features.PublicMenu.Queries;
 
 public static class PublicMenuEndpoints
@@ -13,12 +14,29 @@ public static class PublicMenuEndpoints
         var group = app.MapGroup("/api/v1/tenants/{tenant_slug}/menu")
                        .WithTags("Public Menu");
 
-        group.MapGet("/", async (string tenant_slug, string? table_token, IMediator mediator, HttpContext context, CancellationToken ct) =>
+        group.MapGet("/", async (string tenant_slug, string? table_token, IMediator mediator, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, CancellationToken ct) =>
         {
+            var cacheKey = $"menu_etag:{tenant_slug}:{table_token ?? "default"}";
+
+            // If client sends If-None-Match, check cached ETag in Redis first for sub-5ms response
+            if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch))
+            {
+                var cachedEtag = await cache.GetStringAsync(cacheKey, ct);
+                if (!string.IsNullOrEmpty(cachedEtag) && cachedEtag == ifNoneMatch)
+                {
+                    return Results.StatusCode(StatusCodes.Status304NotModified);
+                }
+            }
+
             var (response, etag) = await mediator.Send(new GetPublicMenuQuery(tenant_slug, table_token), ct);
 
-            // Conditional HTTP GET caching
-            if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) && ifNoneMatch == etag)
+            // Cache computed ETag in Redis with 60s TTL
+            await cache.SetStringAsync(cacheKey, etag, new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
+            }, ct);
+
+            if (context.Request.Headers.TryGetValue("If-None-Match", out var clientEtag) && clientEtag == etag)
             {
                 return Results.StatusCode(StatusCodes.Status304NotModified);
             }

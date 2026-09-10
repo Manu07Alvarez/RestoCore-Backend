@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Application.Features.PublicMenu.Queries;
+namespace RestoCore.Application.Features.PublicMenu.Queries;
 
 using System.Security.Cryptography;
 using System.Text;
@@ -24,6 +24,7 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
         // Public lookup ignores tenant query filter since client is unauthenticated
         var tenant = await _context.Tenants
             .IgnoreQueryFilters()
+            .AsNoTracking()
             .Include(t => t.Categories.Where(c => c.IsActive).OrderBy(c => c.DisplayOrder))
                 .ThenInclude(c => c.Items.OrderBy(m => m.DisplayOrder))
                     .ThenInclude(m => m.ModifierGroups)

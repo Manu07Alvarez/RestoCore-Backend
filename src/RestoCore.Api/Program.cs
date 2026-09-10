@@ -15,7 +15,31 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to container
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new Microsoft.OpenApi.OpenApiInfo
+    {
+        Title = "RestoCore Backend API",
+        Version = "v1",
+        Description = "Multi-tenant restaurant digital menu and kitchen operations backend API."
+    });
+
+    var securityScheme = new Microsoft.OpenApi.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Description = "Enter JWT Bearer token format: Bearer {your token}",
+        In = Microsoft.OpenApi.ParameterLocation.Header,
+        Type = Microsoft.OpenApi.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT"
+    };
+
+    c.AddSecurityDefinition("Bearer", securityScheme);
+    c.AddSecurityRequirement(document => new Microsoft.OpenApi.OpenApiSecurityRequirement
+    {
+        { new Microsoft.OpenApi.OpenApiSecuritySchemeReference("Bearer", document), new List<string>() }
+    });
+});
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
@@ -37,6 +61,14 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 // Services
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
+
+// Caching (Redis)
+var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConfig;
+    options.InstanceName = "RestoCore:";
+});
 
 // Persistence (PostgreSQL with JSONB & GIN support)
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -60,7 +92,7 @@ builder.Services.AddAuthorization(options =>
     options.AddPolicy("SuperAdminOnly", policy => policy.Requirements.Add(new OpaRequirement("manage_tenants")));
 });
 
-// Telemetry (OpenTelemetry)
+// Telemetry (OpenTelemetry Traces, Metrics & Structured Logging)
 builder.Services.AddRestoCoreTelemetry(builder.Configuration);
 
 // Exception Handling
@@ -79,6 +111,43 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseMiddleware<TenantResolutionMiddleware>();
+
+// Structured Execution Logging Middleware (correlates with Aspire Dashboard & OpenTelemetry traces)
+app.Use(async (context, next) =>
+{
+    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+    var tenantContext = context.RequestServices.GetRequiredService<ITenantContext>();
+
+    logger.LogInformation("HTTP {Method} {Path} received for Tenant '{TenantSlug}' (TenantId: {TenantId})",
+        context.Request.Method,
+        context.Request.Path,
+        tenantContext.TenantSlug ?? "none",
+        tenantContext.TenantId?.ToString() ?? "none");
+
+    try
+    {
+        await next();
+        stopwatch.Stop();
+
+        logger.LogInformation("HTTP {Method} {Path} completed with Status {StatusCode} in {ElapsedMs}ms for Tenant '{TenantSlug}'",
+            context.Request.Method,
+            context.Request.Path,
+            context.Response.StatusCode,
+            stopwatch.ElapsedMilliseconds,
+            tenantContext.TenantSlug ?? "none");
+    }
+    catch (Exception ex)
+    {
+        stopwatch.Stop();
+        logger.LogError(ex, "HTTP {Method} {Path} failed after {ElapsedMs}ms for Tenant '{TenantSlug}'",
+            context.Request.Method,
+            context.Request.Path,
+            stopwatch.ElapsedMilliseconds,
+            tenantContext.TenantSlug ?? "none");
+        throw;
+    }
+});
 
 app.UseAuthentication();
 app.UseAuthorization();
