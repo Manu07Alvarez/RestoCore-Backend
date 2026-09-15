@@ -1,6 +1,6 @@
-namespace RestoCore.Application.Features.Kitchen.Commands;
+﻿namespace RestoCore.Application.Features.Kitchen.Commands;
 
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
 

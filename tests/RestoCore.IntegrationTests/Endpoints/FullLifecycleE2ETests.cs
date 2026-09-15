@@ -49,6 +49,7 @@ public class FullLifecycleE2ETests : IClassFixture<ContainerizedStackFixture>
         // 2. Add Category and MenuItem in DB (set TenantContext in scope)
         Guid categoryId;
         Guid itemId;
+        string tableToken;
         using (var scope = _factory.Services.CreateScope())
         {
             var tenantContext = scope.ServiceProvider.GetRequiredService<ITenantContext>();
@@ -80,11 +81,12 @@ public class FullLifecycleE2ETests : IClassFixture<ContainerizedStackFixture>
             };
             db.MenuItems.Add(item);
 
+            tableToken = $"tok-{Guid.NewGuid():N}".Substring(0, 20);
             var table = new Table
             {
                 TenantId = tenantId,
                 TableNumber = 12,
-                Token = $"tok-{Guid.NewGuid():N}".Substring(0, 20),
+                Token = tableToken,
                 IsActive = true
             };
             db.Tables.Add(table);
@@ -93,7 +95,7 @@ public class FullLifecycleE2ETests : IClassFixture<ContainerizedStackFixture>
             itemId = item.Id;
         }
 
-        // 3. Query Public Digital Menu via HTTP
+        // 3. Query Public Digital Menu via HTTP (both default and with table_token)
         var menuResponse = await _client.GetAsync($"/api/v1/tenants/{slug}/menu");
         menuResponse.StatusCode.Should().Be(HttpStatusCode.OK);
         menuResponse.Headers.ETag.Should().NotBeNull();
@@ -106,6 +108,12 @@ public class FullLifecycleE2ETests : IClassFixture<ContainerizedStackFixture>
 
         var specialtyCategory = menuData.Categories.First(c => c.Name == "Especialidades");
         specialtyCategory.Items.Should().Contain(i => i.Name == "Asado de Tira" && i.IsAvailable);
+
+        var tableMenuResponse = await _client.GetAsync($"/api/v1/tenants/{slug}/menu?table_token={tableToken}");
+        tableMenuResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var tableMenuData = await tableMenuResponse.Content.ReadFromJsonAsync<PublicMenuResponse>(JsonOptions);
+        tableMenuData.Should().NotBeNull();
+        tableMenuData!.TableNumber.Should().Be(12);
 
         // 4. Test ETag 304 Not Modified
         var etag = menuResponse.Headers.ETag!.Tag;
@@ -124,11 +132,17 @@ public class FullLifecycleE2ETests : IClassFixture<ContainerizedStackFixture>
             await db.SaveChangesAsync();
         }
 
-        // 6. Public menu query immediately reflects item as unavailable
+        // 6. Public menu query immediately reflects item as unavailable for both default and table_token queries
         var updatedMenuResponse = await _client.GetAsync($"/api/v1/tenants/{slug}/menu");
         var updatedMenuData = await updatedMenuResponse.Content.ReadFromJsonAsync<PublicMenuResponse>(JsonOptions);
         updatedMenuData.Should().NotBeNull();
         var updatedCategory = updatedMenuData!.Categories.First(c => c.Name == "Especialidades");
         updatedCategory.Items.First(i => i.Name == "Asado de Tira").IsAvailable.Should().BeFalse();
+
+        var updatedTableMenuResponse = await _client.GetAsync($"/api/v1/tenants/{slug}/menu?table_token={tableToken}");
+        var updatedTableMenuData = await updatedTableMenuResponse.Content.ReadFromJsonAsync<PublicMenuResponse>(JsonOptions);
+        updatedTableMenuData.Should().NotBeNull();
+        var updatedTableCategory = updatedTableMenuData!.Categories.First(c => c.Name == "Especialidades");
+        updatedTableCategory.Items.First(i => i.Name == "Asado de Tira").IsAvailable.Should().BeFalse();
     }
 }

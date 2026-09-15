@@ -1,4 +1,4 @@
-namespace RestoCore.Application.Features.MenuItems.Validators;
+﻿namespace RestoCore.Application.Features.MenuItems.Validators;
 
 using FluentValidation;
 using RestoCore.Application.Features.MenuItems.Commands;

@@ -10,8 +10,8 @@
 param(
     [ValidateSet("public-menu-load", "etag-cache-test", "public-menu-stress", "all-endpoints-test")]
     [string]$Scenario = "public-menu-load",
-    [string]$BaseUrl = "http://localhost:5000",
-    [string]$TenantSlug = "test-restaurant"
+    [string]$BaseUrl = "http://localhost:5221",
+    [string]$TenantSlug = "bodegon-0320458"
 )
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path

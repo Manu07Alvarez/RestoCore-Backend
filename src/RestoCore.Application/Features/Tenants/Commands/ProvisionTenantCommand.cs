@@ -1,6 +1,6 @@
-namespace RestoCore.Application.Features.Tenants.Commands;
+﻿namespace RestoCore.Application.Features.Tenants.Commands;
 
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Domain.Entities;

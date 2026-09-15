@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Api.Middlewares;
+namespace RestoCore.Api.Middlewares;
 
 using System.Diagnostics;
 using System.Text.Json;
@@ -17,36 +17,48 @@ public class GlobalExceptionHandler : IExceptionHandler
 
     public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
-        _logger.LogError(exception, "Unhandled exception occurred: {Message}", exception.Message);
-
-        var (statusCode, title, detail) = exception switch
+        var tenantContext = httpContext.RequestServices.GetService<RestoCore.Application.Common.Interfaces.ITenantContext>();
+        var (statusCode, title, detail, errorCode) = exception switch
         {
             FluentValidation.ValidationException valEx => (
                 StatusCodes.Status400BadRequest,
                 "Validation Error",
-                string.Join("; ", valEx.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}"))
+                string.Join("; ", valEx.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}")),
+                "VALIDATION_ERROR"
             ),
             KeyNotFoundException notFoundEx => (
                 StatusCodes.Status404NotFound,
                 "Resource Not Found",
-                notFoundEx.Message
+                notFoundEx.Message,
+                "RESOURCE_NOT_FOUND"
             ),
             UnauthorizedAccessException authEx => (
                 StatusCodes.Status403Forbidden,
                 "Forbidden",
-                authEx.Message
+                authEx.Message,
+                "FORBIDDEN"
             ),
             InvalidOperationException opEx => (
                 StatusCodes.Status409Conflict,
                 "Conflict",
-                opEx.Message
+                opEx.Message,
+                "CONFLICT"
             ),
             _ => (
                 StatusCodes.Status500InternalServerError,
                 "Internal Server Error",
-                "An unexpected error occurred while processing your request."
+                "An unexpected error occurred while processing your request.",
+                "INTERNAL_SERVER_ERROR"
             )
         };
+
+        _logger.LogError(exception, 
+            "Unhandled exception occurred: {Message}. ErrorCode: {ErrorCode}, Tenant: {TenantSlug}, TenantId: {TenantId}, StatusCode: {StatusCode}", 
+            exception.Message,
+            errorCode,
+            tenantContext?.TenantSlug ?? "none",
+            tenantContext?.TenantId?.ToString() ?? "none",
+            statusCode);
 
         var problemDetails = new ProblemDetails
         {
@@ -58,6 +70,12 @@ public class GlobalExceptionHandler : IExceptionHandler
 
         var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
         problemDetails.Extensions["traceId"] = traceId;
+        problemDetails.Extensions["errorCode"] = errorCode;
+
+        if (tenantContext?.TenantId.HasValue == true)
+        {
+            problemDetails.Extensions["tenantId"] = tenantContext.TenantId.Value;
+        }
 
         httpContext.Response.StatusCode = statusCode;
         httpContext.Response.ContentType = "application/problem+json";

@@ -1,6 +1,6 @@
-namespace RestoCore.Api.Endpoints;
+﻿namespace RestoCore.Api.Endpoints;
 
-using MediatR;
+using RestoCore.Application.Common.Mediator;
 using Microsoft.AspNetCore.Authorization;
 using RestoCore.Application.Features.Categories.Commands;
 using RestoCore.Application.Features.MenuItems.Commands;

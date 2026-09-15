@@ -47,5 +47,5 @@ El agente debe ejecutar y seguir los flujos correspondientes a las habilidades d
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/003-k6-aspire-swagger/plan.md
+specs/004-structured-logging-traces/plan.md
 <!-- SPECKIT END -->
