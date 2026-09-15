@@ -3,6 +3,7 @@ namespace RestoCore.Infrastructure.Persistence;
 using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Logging;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Domain.Common;
 using RestoCore.Domain.Entities;
@@ -11,15 +12,18 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     private readonly ITenantContext _tenantContext;
     private readonly IDistributedCache? _cache;
+    private readonly ILogger<ApplicationDbContext>? _logger;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         ITenantContext tenantContext,
-        IDistributedCache? cache = null)
+        IDistributedCache? cache = null,
+        ILogger<ApplicationDbContext>? logger = null)
         : base(options)
     {
         _tenantContext = tenantContext;
         _cache = cache;
+        _logger = logger;
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -80,52 +84,78 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         }
 
         List<Guid>? modifiedTenantIds = null;
+        HashSet<string>? slugsToInvalidate = null;
+
         if (_cache != null)
         {
-            modifiedTenantIds = ChangeTracker.Entries()
-                .Where(e => e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
-                .Select(e => e.Entity switch
+            slugsToInvalidate = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            if (!string.IsNullOrEmpty(_tenantContext.TenantSlug))
+            {
+                slugsToInvalidate.Add(_tenantContext.TenantSlug);
+            }
+
+            foreach (var entry in ChangeTracker.Entries())
+            {
+                if (entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
                 {
-                    ITenantScopedEntity tse => tse.TenantId,
-                    Tenant t => t.Id,
-                    _ => Guid.Empty
-                })
-                .Where(id => id != Guid.Empty)
-                .Distinct()
-                .ToList();
+                    if (entry.Entity is Tenant tenant && !string.IsNullOrEmpty(tenant.Slug))
+                    {
+                        slugsToInvalidate.Add(tenant.Slug);
+                    }
+                    else if (entry.Entity is ITenantScopedEntity tse && tse.TenantId != Guid.Empty)
+                    {
+                        modifiedTenantIds ??= new List<Guid>();
+                        modifiedTenantIds.Add(tse.TenantId);
+                    }
+                }
+            }
         }
 
         var result = await base.SaveChangesAsync(cancellationToken);
 
-        if (_cache != null && modifiedTenantIds != null && modifiedTenantIds.Count > 0)
+        if (_cache != null && slugsToInvalidate != null)
         {
-            var slugs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            if (!string.IsNullOrEmpty(_tenantContext.TenantSlug))
+            // Post-commit cache invalidation is strictly best-effort:
+            // 1. Do not use the caller's cancellation token so cancellations after commit don't abort cleanup.
+            // 2. Any failure must not cause SaveChangesAsync to fail since data is already persisted.
+            try
             {
-                slugs.Add(_tenantContext.TenantSlug);
-            }
-
-            var dbSlugs = await Tenants.IgnoreQueryFilters()
-                .Where(t => modifiedTenantIds.Contains(t.Id))
-                .Select(t => t.Slug)
-                .ToListAsync(cancellationToken);
-
-            foreach (var s in dbSlugs)
-            {
-                slugs.Add(s);
-            }
-
-            foreach (var slug in slugs)
-            {
-                try
+                if (modifiedTenantIds != null && modifiedTenantIds.Count > 0)
                 {
-                    await _cache.RemoveAsync($"menu_payload:{slug}:default", cancellationToken);
-                    await _cache.RemoveAsync($"menu_etag:{slug}:default", cancellationToken);
+                    var distinctTenantIds = modifiedTenantIds.Distinct().ToList();
+                    var dbSlugs = await Tenants.IgnoreQueryFilters()
+                        .Where(t => distinctTenantIds.Contains(t.Id))
+                        .Select(t => t.Slug)
+                        .ToListAsync(CancellationToken.None);
+
+                    foreach (var s in dbSlugs)
+                    {
+                        slugsToInvalidate.Add(s);
+                    }
                 }
-                catch
+
+                foreach (var slug in slugsToInvalidate)
                 {
-                    // Non-blocking cache eviction failure
+                    // Bump tenant-wide menu version: invalidates all table tokens and default menu caches
+                    var newVersion = Guid.NewGuid().ToString("N");
+                    await _cache.SetStringAsync(
+                        $"menu_version:{slug}",
+                        newVersion,
+                        new DistributedCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7)
+                        },
+                        CancellationToken.None);
+
+                    // Also proactively clean legacy default keys
+                    await _cache.RemoveAsync($"menu_payload:{slug}:default", CancellationToken.None);
+                    await _cache.RemoveAsync($"menu_etag:{slug}:default", CancellationToken.None);
                 }
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogWarning(ex, "Best-effort post-commit menu cache invalidation failed after successful database commit.");
             }
         }
 

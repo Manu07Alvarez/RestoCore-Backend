@@ -16,11 +16,24 @@ public static class PublicMenuEndpoints
 
         group.MapGet("/", async (string tenant_slug, string? table_token, IMediator mediator, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, CancellationToken ct) =>
         {
-            var etagCacheKey = $"menu_etag:{tenant_slug}:{table_token ?? "default"}";
-            var payloadCacheKey = $"menu_payload:{tenant_slug}:{table_token ?? "default"}";
+            var versionCacheKey = $"menu_version:{tenant_slug}";
+            string version = "1";
+            string? cachedEtag = null;
+            string? cachedPayload = null;
 
-            var cachedEtag = await cache.GetStringAsync(etagCacheKey, ct);
-            var cachedPayload = await cache.GetStringAsync(payloadCacheKey, ct);
+            try
+            {
+                version = await cache.GetStringAsync(versionCacheKey, ct) ?? "1";
+                var etagCacheKey = $"menu_etag:{tenant_slug}:{version}:{table_token ?? "default"}";
+                var payloadCacheKey = $"menu_payload:{tenant_slug}:{version}:{table_token ?? "default"}";
+
+                cachedEtag = await cache.GetStringAsync(etagCacheKey, ct);
+                cachedPayload = await cache.GetStringAsync(payloadCacheKey, ct);
+            }
+            catch
+            {
+                // Resilient fallback: continue with dynamic mediator execution
+            }
 
             if (!string.IsNullOrEmpty(cachedEtag) && !string.IsNullOrEmpty(cachedPayload))
             {
@@ -37,13 +50,23 @@ public static class PublicMenuEndpoints
             var (response, etag) = await mediator.Send(new GetPublicMenuQuery(tenant_slug, table_token), ct);
             var jsonPayload = System.Text.Json.JsonSerializer.Serialize(response, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
 
-            // Cache computed ETag and serialized JSON payload in Redis with 60s TTL
-            var cacheOptions = new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
+            try
             {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
-            };
-            await cache.SetStringAsync(etagCacheKey, etag, cacheOptions, ct);
-            await cache.SetStringAsync(payloadCacheKey, jsonPayload, cacheOptions, ct);
+                var etagCacheKey = $"menu_etag:{tenant_slug}:{version}:{table_token ?? "default"}";
+                var payloadCacheKey = $"menu_payload:{tenant_slug}:{version}:{table_token ?? "default"}";
+
+                // Cache computed ETag and serialized JSON payload in Redis with 60s TTL
+                var cacheOptions = new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
+                };
+                await cache.SetStringAsync(etagCacheKey, etag, cacheOptions, ct);
+                await cache.SetStringAsync(payloadCacheKey, jsonPayload, cacheOptions, ct);
+            }
+            catch
+            {
+                // Non-blocking cache write failure
+            }
 
             if (context.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) && incomingEtag == etag)
             {
