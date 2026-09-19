@@ -6,6 +6,7 @@ using System.Text.Json;
 using RestoCore.Application.Common.Mediator;
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Features.MenuLayout.DTOs;
 using RestoCore.Application.Features.PublicMenu.DTOs;
 
 public record GetPublicMenuQuery(string TenantSlug, string? TableToken = null) : IRequest<(PublicMenuResponse Response, string ETag)>;
@@ -45,6 +46,35 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
             tableNumber = table?.TableNumber;
         }
 
+        var activeDishIds = tenant.Categories
+            .Where(c => c.IsActive)
+            .SelectMany(c => c.Items)
+            .Where(i => i.IsAvailable)
+            .Select(i => i.Id)
+            .ToHashSet();
+
+        LayoutConfigDto? layoutConfigDto = null;
+        if (tenant.LayoutConfig != null)
+        {
+            layoutConfigDto = new LayoutConfigDto
+            {
+                CanvasEnabled = tenant.LayoutConfig.CanvasEnabled,
+                BackgroundUrl = tenant.LayoutConfig.BackgroundUrl,
+                BackgroundColor = tenant.LayoutConfig.BackgroundColor,
+                Elements = tenant.LayoutConfig.Elements
+                    .Where(e => activeDishIds.Contains(e.DishId))
+                    .Select(e => new CanvasElementDto
+                    {
+                        DishId = e.DishId,
+                        X = e.X,
+                        Y = e.Y,
+                        ZIndex = e.ZIndex,
+                        Width = e.Width,
+                        Height = e.Height
+                    }).ToList()
+            };
+        }
+
         var response = new PublicMenuResponse
         {
             TenantName = tenant.Name,
@@ -61,6 +91,7 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
                 FontFamily = tenant.BrandingConfig.FontFamily,
                 LayoutMode = tenant.BrandingConfig.LayoutMode
             },
+            LayoutConfig = layoutConfigDto,
             Categories = tenant.Categories.Select(c => new PublicCategoryDto
             {
                 Id = c.Id,
@@ -95,10 +126,22 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
             }).ToList()
         };
 
-        // Compute deterministic ETag from payload JSON
-        var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(response);
-        var hash = SHA256.HashData(jsonBytes);
-        var etag = $"\"{Convert.ToHexString(hash)[..16].ToLowerInvariant()}\"";
+        // Compute deterministic ETag from CurrentVersionHash or payload JSON
+        string etag;
+        if (!string.IsNullOrEmpty(tenant.CurrentVersionHash) && tableNumber == null)
+        {
+            etag = $"\"{tenant.CurrentVersionHash}\"";
+        }
+        else if (!string.IsNullOrEmpty(tenant.CurrentVersionHash) && tableNumber != null)
+        {
+            etag = $"\"{tenant.CurrentVersionHash}-t{tableNumber}\"";
+        }
+        else
+        {
+            var jsonBytes = JsonSerializer.SerializeToUtf8Bytes(response);
+            var hash = SHA256.HashData(jsonBytes);
+            etag = $"\"{Convert.ToHexString(hash)[..16].ToLowerInvariant()}\"";
+        }
 
         return (response, etag);
     }

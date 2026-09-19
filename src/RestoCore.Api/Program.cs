@@ -5,6 +5,7 @@ using RestoCore.Api.Middlewares;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Application.Features.PublicMenu.Queries;
 using RestoCore.Infrastructure.Authorization;
+using RestoCore.Infrastructure.Cdn;
 using RestoCore.Infrastructure.MultiTenancy;
 using RestoCore.Infrastructure.Persistence;
 using RestoCore.Infrastructure.Qr;
@@ -59,6 +60,8 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 // Services
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
+builder.Services.AddSingleton<ICdnPurgeService, LocalDevelopmentCdnPurgeService>();
+builder.Services.AddScoped<RestoCore.Application.Features.MenuLayout.Services.IMenuCompilationService, RestoCore.Infrastructure.Services.Compilation.MenuCompilationService>();
 
 // Caching (Redis)
 var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
@@ -155,6 +158,7 @@ app.UseAuthorization();
 app.MapHealthEndpoints();
 app.MapPublicMenuEndpoints();
 app.MapAdminCatalogEndpoints();
+app.MapAdminMenuLayoutEndpoints();
 app.MapKitchenEndpoints();
 app.MapAdminTenantEndpoints();
 app.MapAdminTableEndpoints();

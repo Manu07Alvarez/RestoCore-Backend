@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Application.Common.Interfaces;
+namespace RestoCore.Application.Common.Interfaces;
 
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Domain.Entities;
@@ -11,6 +11,7 @@ public interface IApplicationDbContext
     DbSet<ModifierGroup> ModifierGroups { get; }
     DbSet<ModifierOption> ModifierOptions { get; }
     DbSet<Table> Tables { get; }
+    DbSet<MenuPublishJob> MenuPublishJobs { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

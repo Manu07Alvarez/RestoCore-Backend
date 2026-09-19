@@ -32,6 +32,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<ModifierGroup> ModifierGroups => Set<ModifierGroup>();
     public DbSet<ModifierOption> ModifierOptions => Set<ModifierOption>();
     public DbSet<Table> Tables => Set<Table>();
+    public DbSet<MenuPublishJob> MenuPublishJobs => Set<MenuPublishJob>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

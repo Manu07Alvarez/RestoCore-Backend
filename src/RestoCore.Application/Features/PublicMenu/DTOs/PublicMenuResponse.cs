@@ -1,4 +1,6 @@
-﻿namespace RestoCore.Application.Features.PublicMenu.DTOs;
+namespace RestoCore.Application.Features.PublicMenu.DTOs;
+
+using RestoCore.Application.Features.MenuLayout.DTOs;
 
 public class PublicMenuResponse
 {
@@ -6,6 +8,7 @@ public class PublicMenuResponse
     public string TenantSlug { get; set; } = string.Empty;
     public int? TableNumber { get; set; }
     public PublicBrandingDto Branding { get; set; } = new();
+    public LayoutConfigDto? LayoutConfig { get; set; }
     public List<PublicCategoryDto> Categories { get; set; } = new();
 }
 
