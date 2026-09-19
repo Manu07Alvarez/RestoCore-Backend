@@ -37,13 +37,15 @@ public static class PublicMenuEndpoints
 
             if (!string.IsNullOrEmpty(cachedEtag) && !string.IsNullOrEmpty(cachedPayload))
             {
-                if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) && ifNoneMatch == cachedEtag)
+                if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) && MatchesEtag(ifNoneMatch, cachedEtag))
                 {
+                    context.Response.Headers.ETag = cachedEtag;
+                    context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
                     return Results.StatusCode(StatusCodes.Status304NotModified);
                 }
 
                 context.Response.Headers.ETag = cachedEtag;
-                context.Response.Headers.CacheControl = "public, max-age=60, stale-while-revalidate=300";
+                context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
                 return Results.Content(cachedPayload, "application/json");
             }
 
@@ -68,13 +70,15 @@ public static class PublicMenuEndpoints
                 // Non-blocking cache write failure
             }
 
-            if (context.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) && incomingEtag == etag)
+            if (context.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) && MatchesEtag(incomingEtag, etag))
             {
+                context.Response.Headers.ETag = etag;
+                context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
                 return Results.StatusCode(StatusCodes.Status304NotModified);
             }
 
             context.Response.Headers.ETag = etag;
-            context.Response.Headers.CacheControl = "public, max-age=60, stale-while-revalidate=300";
+            context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
 
             return Results.Content(jsonPayload, "application/json");
         })
@@ -92,5 +96,27 @@ public static class PublicMenuEndpoints
             }
             return Results.Redirect(target);
         }).AllowAnonymous();
+    }
+
+    private static bool MatchesEtag(string? ifNoneMatchHeader, string currentEtag)
+    {
+        if (string.IsNullOrWhiteSpace(ifNoneMatchHeader)) return false;
+        if (ifNoneMatchHeader == "*") return true;
+        if (string.Equals(ifNoneMatchHeader, currentEtag, StringComparison.Ordinal)) return true;
+
+        var cleanCurrent = currentEtag.Trim('\"');
+        var tokens = ifNoneMatchHeader.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        foreach (var token in tokens)
+        {
+            var cleanToken = token.StartsWith("W/", StringComparison.OrdinalIgnoreCase)
+                ? token[2..].Trim('\"')
+                : token.Trim('\"');
+
+            if (string.Equals(cleanToken, cleanCurrent, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 }

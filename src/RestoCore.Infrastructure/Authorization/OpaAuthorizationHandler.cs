@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Infrastructure.Authorization;
+namespace RestoCore.Infrastructure.Authorization;
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;

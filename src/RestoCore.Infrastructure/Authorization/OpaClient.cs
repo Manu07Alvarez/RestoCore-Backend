@@ -1,7 +1,8 @@
-﻿namespace RestoCore.Infrastructure.Authorization;
+namespace RestoCore.Infrastructure.Authorization;
 
 using System.Net.Http.Json;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 
@@ -21,14 +22,22 @@ public class OpaInput
 
 public class OpaUser
 {
+    [JsonPropertyName("id")]
     public string Id { get; set; } = string.Empty;
+
+    [JsonPropertyName("tenant_id")]
     public string TenantId { get; set; } = string.Empty;
+
+    [JsonPropertyName("roles")]
     public string[] Roles { get; set; } = Array.Empty<string>();
 }
 
 public class OpaResource
 {
+    [JsonPropertyName("type")]
     public string Type { get; set; } = string.Empty;
+
+    [JsonPropertyName("tenant_id")]
     public string TenantId { get; set; } = string.Empty;
 }
 

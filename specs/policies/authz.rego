@@ -1,4 +1,4 @@
-﻿package restocore.authz
+package restocore.authz
 
 import future.keywords.in
 import future.keywords.if
@@ -24,6 +24,8 @@ allow if {
     input.action in [
         "read_dashboard",
         "manage_menu",
+        "manage_layout",
+        "publish_menu",
         "manage_categories",
         "manage_dishes",
         "manage_prices",

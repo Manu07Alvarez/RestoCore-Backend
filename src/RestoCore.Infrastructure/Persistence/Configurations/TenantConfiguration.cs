@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Infrastructure.Persistence.Configurations;
+namespace RestoCore.Infrastructure.Persistence.Configurations;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -24,5 +24,13 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         {
             branding.ToJson();
         });
+
+        builder.OwnsOne(t => t.LayoutConfig, layout =>
+        {
+            layout.ToJson();
+            layout.OwnsMany(l => l.Elements);
+        });
+
+        builder.Property(t => t.CurrentVersionHash).HasMaxLength(64);
     }
 }
