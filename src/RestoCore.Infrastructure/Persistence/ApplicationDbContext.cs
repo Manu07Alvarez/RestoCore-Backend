@@ -33,6 +33,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<ModifierOption> ModifierOptions => Set<ModifierOption>();
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<MenuPublishJob> MenuPublishJobs => Set<MenuPublishJob>();
+    public DbSet<Order> Orders => Set<Order>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
