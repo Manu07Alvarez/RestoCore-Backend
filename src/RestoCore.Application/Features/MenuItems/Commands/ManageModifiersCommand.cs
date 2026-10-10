@@ -1,8 +1,8 @@
-﻿namespace RestoCore.Application.Features.MenuItems.Commands;
+namespace RestoCore.Application.Features.MenuItems.Commands;
 
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Domain.Entities;
 
 public record ModifierOptionInput(
@@ -39,12 +39,17 @@ public record ModifierOptionResponse(
 
 public class AddModifierGroupCommandHandler : IRequestHandler<AddModifierGroupCommand, ModifierGroupResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogRepository _catalogRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
 
-    public AddModifierGroupCommandHandler(IApplicationDbContext context, ITenantContext tenantContext)
+    public AddModifierGroupCommandHandler(
+        ICatalogRepository catalogRepository,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext)
     {
-        _context = context;
+        _catalogRepository = catalogRepository;
+        _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
     }
 
@@ -52,10 +57,9 @@ public class AddModifierGroupCommandHandler : IRequestHandler<AddModifierGroupCo
     {
         var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Tenant context is required.");
 
-        var menuItem = await _context.MenuItems
-            .FirstOrDefaultAsync(m => m.Id == request.MenuItemId && m.TenantId == tenantId, cancellationToken);
+        var menuItem = await _catalogRepository.GetMenuItemByIdAsync(request.MenuItemId, cancellationToken);
 
-        if (menuItem == null)
+        if (menuItem == null || menuItem.TenantId != tenantId)
         {
             throw new KeyNotFoundException($"Menu item {request.MenuItemId} was not found for the current tenant.");
         }
@@ -84,8 +88,8 @@ public class AddModifierGroupCommandHandler : IRequestHandler<AddModifierGroupCo
             }
         }
 
-        _context.ModifierGroups.Add(group);
-        await _context.SaveChangesAsync(cancellationToken);
+        _catalogRepository.AddModifierGroup(group);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         return new ModifierGroupResponse(
             group.Id,

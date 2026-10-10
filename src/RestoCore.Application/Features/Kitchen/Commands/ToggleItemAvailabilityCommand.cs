@@ -1,8 +1,7 @@
-﻿namespace RestoCore.Application.Features.Kitchen.Commands;
+namespace RestoCore.Application.Features.Kitchen.Commands;
 
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
-using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 
 public record ToggleItemAvailabilityCommand(
     Guid ItemId,
@@ -17,32 +16,32 @@ public record ItemAvailabilityResponse(
 
 public class ToggleItemAvailabilityCommandHandler : IRequestHandler<ToggleItemAvailabilityCommand, ItemAvailabilityResponse>
 {
-    private readonly IApplicationDbContext _context;
-    private readonly ITenantContext _tenantContext;
+    private readonly IKitchenRepository _kitchenRepository;
 
-    public ToggleItemAvailabilityCommandHandler(IApplicationDbContext context, ITenantContext tenantContext)
+    public ToggleItemAvailabilityCommandHandler(IKitchenRepository kitchenRepository)
     {
-        _context = context;
-        _tenantContext = tenantContext;
+        _kitchenRepository = kitchenRepository;
     }
 
     public async Task<ItemAvailabilityResponse> Handle(ToggleItemAvailabilityCommand request, CancellationToken cancellationToken)
     {
-        var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Tenant context is required.");
-
-        var item = await _context.MenuItems
-            .FirstOrDefaultAsync(m => m.Id == request.ItemId && m.TenantId == tenantId, cancellationToken);
-
+        var item = await _kitchenRepository.GetItemForAvailabilityToggleAsync(request.ItemId, cancellationToken);
         if (item == null)
         {
             throw new KeyNotFoundException($"Menu item {request.ItemId} was not found for the current tenant.");
         }
 
-        item.IsAvailable = request.IsAvailable;
-        item.UpdatedAt = DateTimeOffset.UtcNow;
+        var success = await _kitchenRepository.UpdateItemAvailabilityWithRetryAsync(
+            request.ItemId,
+            request.IsAvailable,
+            maxRetries: 3,
+            cancellationToken);
 
-        await _context.SaveChangesAsync(cancellationToken);
+        if (!success)
+        {
+            throw new InvalidOperationException($"Failed to update availability for item {request.ItemId} due to concurrency contention.");
+        }
 
-        return new ItemAvailabilityResponse(item.Id, item.IsAvailable, item.UpdatedAt);
+        return new ItemAvailabilityResponse(request.ItemId, request.IsAvailable, DateTimeOffset.UtcNow);
     }
 }

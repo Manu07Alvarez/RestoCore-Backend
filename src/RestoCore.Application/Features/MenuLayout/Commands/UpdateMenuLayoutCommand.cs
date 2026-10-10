@@ -5,9 +5,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Application.Common.Mediator;
 using RestoCore.Application.Features.MenuLayout.DTOs;
 using RestoCore.Domain.ValueObjects;
@@ -16,16 +16,19 @@ public record UpdateMenuLayoutCommand(LayoutConfigDto Layout) : IRequest<LayoutC
 
 public class UpdateMenuLayoutCommandHandler : IRequestHandler<UpdateMenuLayoutCommand, LayoutConfigDto>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMenuLayoutRepository _menuLayoutRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
-    private readonly Microsoft.Extensions.Caching.Distributed.IDistributedCache? _cache;
+    private readonly IDistributedCache? _cache;
 
     public UpdateMenuLayoutCommandHandler(
-        IApplicationDbContext context,
+        IMenuLayoutRepository menuLayoutRepository,
+        IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
-        Microsoft.Extensions.Caching.Distributed.IDistributedCache? cache = null)
+        IDistributedCache? cache = null)
     {
-        _context = context;
+        _menuLayoutRepository = menuLayoutRepository;
+        _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _cache = cache;
     }
@@ -33,7 +36,7 @@ public class UpdateMenuLayoutCommandHandler : IRequestHandler<UpdateMenuLayoutCo
     public async Task<LayoutConfigDto> Handle(UpdateMenuLayoutCommand request, CancellationToken cancellationToken)
     {
         var tenantId = _tenantContext.TenantId ?? throw new UnauthorizedAccessException("Tenant ID is required.");
-        var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
+        var tenant = await _menuLayoutRepository.GetTenantForLayoutAsync(tenantId, cancellationToken);
         if (tenant == null)
         {
             throw new KeyNotFoundException($"Tenant {tenantId} was not found.");
@@ -56,7 +59,7 @@ public class UpdateMenuLayoutCommandHandler : IRequestHandler<UpdateMenuLayoutCo
         };
 
         tenant.UpdatedAt = DateTimeOffset.UtcNow;
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         if (_cache != null)
         {

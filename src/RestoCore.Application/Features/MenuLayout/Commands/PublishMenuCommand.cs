@@ -3,10 +3,10 @@ namespace RestoCore.Application.Features.MenuLayout.Commands;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Application.Common.Mediator;
 using RestoCore.Application.Features.MenuLayout.DTOs;
 using RestoCore.Application.Features.MenuLayout.Services;
@@ -16,7 +16,8 @@ public record PublishMenuCommand(MenuPublishRequest? Request = null) : IRequest<
 
 public class PublishMenuCommandHandler : IRequestHandler<PublishMenuCommand, MenuPublishJobResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly IMenuLayoutRepository _menuLayoutRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
     private readonly IMenuCompilationService _compilationService;
     private readonly ICdnPurgeService _cdnPurgeService;
@@ -24,14 +25,16 @@ public class PublishMenuCommandHandler : IRequestHandler<PublishMenuCommand, Men
     private readonly ILogger<PublishMenuCommandHandler> _logger;
 
     public PublishMenuCommandHandler(
-        IApplicationDbContext context,
+        IMenuLayoutRepository menuLayoutRepository,
+        IUnitOfWork unitOfWork,
         ITenantContext tenantContext,
         IMenuCompilationService compilationService,
         ICdnPurgeService cdnPurgeService,
         IDistributedCache cache,
         ILogger<PublishMenuCommandHandler> logger)
     {
-        _context = context;
+        _menuLayoutRepository = menuLayoutRepository;
+        _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
         _compilationService = compilationService;
         _cdnPurgeService = cdnPurgeService;
@@ -42,7 +45,7 @@ public class PublishMenuCommandHandler : IRequestHandler<PublishMenuCommand, Men
     public async Task<MenuPublishJobResponse> Handle(PublishMenuCommand request, CancellationToken cancellationToken)
     {
         var tenantId = _tenantContext.TenantId ?? throw new UnauthorizedAccessException("Tenant ID is required.");
-        var tenant = await _context.Tenants.FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
+        var tenant = await _menuLayoutRepository.GetTenantForLayoutAsync(tenantId, cancellationToken);
         if (tenant == null)
         {
             throw new KeyNotFoundException($"Tenant '{tenantId}' was not found.");
@@ -59,8 +62,8 @@ public class PublishMenuCommandHandler : IRequestHandler<PublishMenuCommand, Men
             VersionHash = string.Empty
         };
 
-        _context.MenuPublishJobs.Add(job);
-        await _context.SaveChangesAsync(cancellationToken);
+        _menuLayoutRepository.AddPublishJob(job);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         try
         {
@@ -88,7 +91,7 @@ public class PublishMenuCommandHandler : IRequestHandler<PublishMenuCommand, Men
 
             job.Status = "completed";
             job.CompletedAt = DateTimeOffset.UtcNow;
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
         }
         catch (Exception ex)
         {
@@ -96,7 +99,7 @@ public class PublishMenuCommandHandler : IRequestHandler<PublishMenuCommand, Men
             job.Status = "failed";
             job.ErrorMessage = ex.Message;
             job.CompletedAt = DateTimeOffset.UtcNow;
-            await _context.SaveChangesAsync(cancellationToken);
+            await _unitOfWork.CommitAsync(cancellationToken);
             throw;
         }
 

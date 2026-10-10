@@ -1,8 +1,8 @@
-﻿namespace RestoCore.Application.Features.Tenants.Commands;
+namespace RestoCore.Application.Features.Tenants.Commands;
 
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Domain.Entities;
 using RestoCore.Domain.ValueObjects;
 
@@ -23,20 +23,20 @@ public record TenantSummaryResponse(
 
 public class ProvisionTenantCommandHandler : IRequestHandler<ProvisionTenantCommand, TenantSummaryResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ITenantRepository _tenantRepository;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public ProvisionTenantCommandHandler(IApplicationDbContext context)
+    public ProvisionTenantCommandHandler(ITenantRepository tenantRepository, IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _tenantRepository = tenantRepository;
+        _unitOfWork = unitOfWork;
     }
 
     public async Task<TenantSummaryResponse> Handle(ProvisionTenantCommand request, CancellationToken cancellationToken)
     {
         var normalizedSlug = request.Slug.Trim().ToLowerInvariant();
 
-        var slugExists = await _context.Tenants
-            .AnyAsync(t => t.Slug == normalizedSlug, cancellationToken);
-
+        var slugExists = await _tenantRepository.SlugExistsAsync(normalizedSlug, cancellationToken);
         if (slugExists)
         {
             throw new InvalidOperationException($"Tenant slug '{normalizedSlug}' is already registered.");
@@ -44,9 +44,7 @@ public class ProvisionTenantCommandHandler : IRequestHandler<ProvisionTenantComm
 
         if (!string.IsNullOrWhiteSpace(request.CustomDomain))
         {
-            var domainExists = await _context.Tenants
-                .AnyAsync(t => t.CustomDomain == request.CustomDomain.Trim().ToLowerInvariant(), cancellationToken);
-
+            var domainExists = await _tenantRepository.CustomDomainExistsAsync(request.CustomDomain.Trim().ToLowerInvariant(), cancellationToken);
             if (domainExists)
             {
                 throw new InvalidOperationException($"Custom domain '{request.CustomDomain}' is already in use.");
@@ -62,8 +60,8 @@ public class ProvisionTenantCommandHandler : IRequestHandler<ProvisionTenantComm
             BrandingConfig = new BrandingConfig()
         };
 
-        _context.Tenants.Add(tenant);
-        await _context.SaveChangesAsync(cancellationToken);
+        _tenantRepository.AddTenant(tenant);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         return new TenantSummaryResponse(
             tenant.Id,

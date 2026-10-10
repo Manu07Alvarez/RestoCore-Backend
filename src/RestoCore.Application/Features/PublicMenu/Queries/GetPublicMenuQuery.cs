@@ -1,11 +1,9 @@
 namespace RestoCore.Application.Features.PublicMenu.Queries;
 
 using System.Security.Cryptography;
-using System.Text;
 using System.Text.Json;
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
-using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Application.Features.MenuLayout.DTOs;
 using RestoCore.Application.Features.PublicMenu.DTOs;
 
@@ -13,36 +11,27 @@ public record GetPublicMenuQuery(string TenantSlug, string? TableToken = null) :
 
 public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (PublicMenuResponse Response, string ETag)>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogRepository _catalogRepository;
 
-    public GetPublicMenuQueryHandler(IApplicationDbContext context)
+    public GetPublicMenuQueryHandler(ICatalogRepository catalogRepository)
     {
-        _context = context;
+        _catalogRepository = catalogRepository;
     }
 
     public async Task<(PublicMenuResponse Response, string ETag)> Handle(GetPublicMenuQuery request, CancellationToken cancellationToken)
     {
         // Public lookup ignores tenant query filter since client is unauthenticated
-        var tenant = await _context.Tenants
-            .IgnoreQueryFilters()
-            .AsNoTracking()
-            .Include(t => t.Categories.Where(c => c.IsActive).OrderBy(c => c.DisplayOrder))
-                .ThenInclude(c => c.Items.OrderBy(m => m.DisplayOrder))
-                    .ThenInclude(m => m.ModifierGroups)
-                        .ThenInclude(mg => mg.Options)
-            .FirstOrDefaultAsync(t => t.Slug == request.TenantSlug && t.Status == "Active", cancellationToken);
+        var tenant = await _catalogRepository.GetTenantWithCatalogAsync(request.TenantSlug, cancellationToken);
 
         if (tenant == null)
         {
-            throw new KeyNotFoundException($"Restaurante con slug '{request.TenantSlug}' no fue encontrado o estÃ¡ inactivo.");
+            throw new KeyNotFoundException($"Restaurante con slug '{request.TenantSlug}' no fue encontrado o está inactivo.");
         }
 
         int? tableNumber = null;
         if (!string.IsNullOrEmpty(request.TableToken))
         {
-            var table = await _context.Tables
-                .IgnoreQueryFilters()
-                .FirstOrDefaultAsync(t => t.TenantId == tenant.Id && t.Token == request.TableToken && t.IsActive, cancellationToken);
+            var table = await _catalogRepository.GetActiveTableByTokenAsync(tenant.Id, request.TableToken, cancellationToken);
             tableNumber = table?.TableNumber;
         }
 
