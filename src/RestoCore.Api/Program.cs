@@ -163,6 +163,19 @@ builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.ICatalogRepository, RestoCore.Infrastructure.Persistence.Repositories.CatalogRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IMenuLayoutRepository, RestoCore.Infrastructure.Persistence.Repositories.MenuLayoutRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.ITenantRepository, RestoCore.Infrastructure.Persistence.Repositories.TenantRepository>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IOrderRepository, RestoCore.Infrastructure.Persistence.Repositories.OrderRepository>();
+
+// Redis Streams & Order Queue
+var redisMuxer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig);
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMuxer);
+builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messaging.RedisOrderQueueService>();
+
+// WebSockets & Notifications
+builder.Services.AddSingleton<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
+builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>());
+
+// Background FIFO Worker
+builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
 
 // Authorization & OPA
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();
@@ -235,6 +248,39 @@ app.Use(async (context, next) =>
 });
 
 app.UseAuthorization();
+app.UseWebSockets();
+
+// Kitchen WebSocket stream for real-time dispatch (ADR-0007)
+app.Map("/ws/kitchen", async context =>
+{
+    if (context.WebSockets.IsWebSocketRequest)
+    {
+        var tenantSlug = context.Request.Query["tenant"].ToString();
+        if (string.IsNullOrWhiteSpace(tenantSlug))
+        {
+            context.Response.StatusCode = StatusCodes.Status400BadRequest;
+            return;
+        }
+
+        using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+        var wsManager = context.RequestServices.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
+        wsManager.RegisterSocket(tenantSlug, webSocket);
+
+        var buffer = new byte[1024 * 4];
+        while (webSocket.State == System.Net.WebSockets.WebSocketState.Open)
+        {
+            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+            if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+            {
+                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Closed", CancellationToken.None);
+            }
+        }
+    }
+    else
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+    }
+});
 
 // Feature & System Endpoints
 app.MapHealthEndpoints();
@@ -246,6 +292,7 @@ app.MapKitchenEndpoints();
 app.MapAdminTenantEndpoints();
 app.MapAdminTableEndpoints();
 app.MapStorageEndpoints();
+app.MapOrderEndpoints();
 
 app.Run();
 

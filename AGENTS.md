@@ -41,6 +41,7 @@ El agente debe ejecutar y seguir los flujos correspondientes a las habilidades d
 * `speckit-analyze`: Analisis cruzado de consistencia entre especificaciones y tareas.
 * `speckit-implement`: Ejecucion rigurosa del codigo guiada por tareas.
 * `speckit-git-*`: Gestion estandarizada de ramas y commits.
+* `sync-docs-specs`: Analisis y comparacion de documentacion (RestoCore-Docs) para generacion automatica de specs ante diferencias.
 
 ---
 
