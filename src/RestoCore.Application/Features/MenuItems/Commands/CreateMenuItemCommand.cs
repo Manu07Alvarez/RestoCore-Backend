@@ -1,8 +1,8 @@
-﻿namespace RestoCore.Application.Features.MenuItems.Commands;
+namespace RestoCore.Application.Features.MenuItems.Commands;
 
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Domain.Entities;
 
 public record CreateMenuItemCommand(
@@ -31,12 +31,17 @@ public record MenuItemResponse(
 
 public class CreateMenuItemCommandHandler : IRequestHandler<CreateMenuItemCommand, MenuItemResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogRepository _catalogRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
 
-    public CreateMenuItemCommandHandler(IApplicationDbContext context, ITenantContext tenantContext)
+    public CreateMenuItemCommandHandler(
+        ICatalogRepository catalogRepository,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext)
     {
-        _context = context;
+        _catalogRepository = catalogRepository;
+        _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
     }
 
@@ -44,10 +49,8 @@ public class CreateMenuItemCommandHandler : IRequestHandler<CreateMenuItemComman
     {
         var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Tenant context is required.");
 
-        var categoryExists = await _context.Categories
-            .AnyAsync(c => c.Id == request.CategoryId && c.TenantId == tenantId, cancellationToken);
-
-        if (!categoryExists)
+        var category = await _catalogRepository.GetCategoryByIdAsync(request.CategoryId, cancellationToken);
+        if (category == null || category.TenantId != tenantId)
         {
             throw new KeyNotFoundException($"Category {request.CategoryId} was not found for the current tenant.");
         }
@@ -66,8 +69,8 @@ public class CreateMenuItemCommandHandler : IRequestHandler<CreateMenuItemComman
             DietaryLabels = request.DietaryLabels ?? Array.Empty<string>()
         };
 
-        _context.MenuItems.Add(item);
-        await _context.SaveChangesAsync(cancellationToken);
+        _catalogRepository.AddMenuItem(item);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         return new MenuItemResponse(
             item.Id,

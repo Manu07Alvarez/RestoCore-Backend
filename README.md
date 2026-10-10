@@ -1,4 +1,4 @@
-﻿# RestoCore Backend (`resto-core-back`)
+# RestoCore Backend (`resto-core-back`)
 
 Plataforma SaaS multi-tenant para la gestion operativa y publicacion de cartas digitales accesibles mediante codigos QR dinamicos para el sector gastronomico.
 
@@ -58,13 +58,17 @@ El entorno de desarrollo orquesta todos los servicios requeridos:
 - **SeaweedFS**: Almacenamiento desacoplado S3 (puertos `8333`, `8888`, `9333`) y bucket auto-inicializado `restocore-images`.
 - **Open Policy Agent (OPA)**: Motor de politicas desacoplado para autorizacion declarativa (puerto `8181`).
 - **.NET Aspire Dashboard**: Visualizador en tiempo real de trazas distribuidas OTLP, metricas y logs estructurados (Web UI en puerto `18888`, receptor OTLP en puerto `4317`).
+- **Streamlit Unified Admin**: Consola modular de administracion e inspeccion en vivo para PostgreSQL, Redis (Pyrefly / Cache) y SeaweedFS (S3) (Web UI en puerto `8501`).
 
 Iniciar el stack completo:
 ```bash
+docker compose up -d
+# O explicitamente con el archivo dev:
 docker compose -f docker-compose.dev.yml up -d
 ```
 
-Acceder al panel de telemetria en tiempo real:
+Acceder a los paneles de administracion y observabilidad:
+- **Streamlit Unified Admin**: `http://localhost:8501`
 - **Aspire Dashboard**: `http://localhost:18888`
 
 ### Ejecutar API Backend y Swagger UI

@@ -1,1 +1,3 @@
-{"feature_directory": "specs/005-canvas-layout-aot-compilation"}
+{
+  "feature_directory": "specs/006-repository-unitofwork-concurrency"
+}

@@ -1,8 +1,8 @@
-﻿namespace RestoCore.Application.Features.Tenants.Commands;
+namespace RestoCore.Application.Features.Tenants.Commands;
 
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Domain.ValueObjects;
 
 public record UpdateBrandingCommand(
@@ -18,12 +18,17 @@ public record UpdateBrandingCommand(
 
 public class UpdateBrandingCommandHandler : IRequestHandler<UpdateBrandingCommand, BrandingConfig>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ITenantRepository _tenantRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
 
-    public UpdateBrandingCommandHandler(IApplicationDbContext context, ITenantContext tenantContext)
+    public UpdateBrandingCommandHandler(
+        ITenantRepository tenantRepository,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext)
     {
-        _context = context;
+        _tenantRepository = tenantRepository;
+        _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
     }
 
@@ -31,9 +36,7 @@ public class UpdateBrandingCommandHandler : IRequestHandler<UpdateBrandingComman
     {
         var tenantId = _tenantContext.TenantId ?? throw new InvalidOperationException("Tenant context is required.");
 
-        var tenant = await _context.Tenants
-            .FirstOrDefaultAsync(t => t.Id == tenantId, cancellationToken);
-
+        var tenant = await _tenantRepository.GetTenantByIdAsync(tenantId, cancellationToken);
         if (tenant == null)
         {
             throw new KeyNotFoundException($"Tenant {tenantId} was not found.");
@@ -51,7 +54,7 @@ public class UpdateBrandingCommandHandler : IRequestHandler<UpdateBrandingComman
             LayoutMode = request.LayoutMode
         };
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         return tenant.BrandingConfig;
     }

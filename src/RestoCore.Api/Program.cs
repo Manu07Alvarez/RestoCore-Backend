@@ -1,5 +1,9 @@
+using System.Security.Claims;
+using System.Text;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using RestoCore.Api.Endpoints;
 using RestoCore.Api.Middlewares;
 using RestoCore.Application.Common.Interfaces;
@@ -12,6 +16,35 @@ using RestoCore.Infrastructure.Qr;
 using RestoCore.Infrastructure.Storage;
 using RestoCore.Infrastructure.Telemetry;
 using RestoCore.Application.Common.Mediator;
+
+// Load .env file if present in repository root or execution directory
+var envCandidates = new[]
+{
+    Path.Combine(Directory.GetCurrentDirectory(), ".env"),
+    Path.Combine(AppContext.BaseDirectory, ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "..", ".env"),
+    Path.Combine(Directory.GetCurrentDirectory(), "..", "..", ".env")
+};
+
+foreach (var envPath in envCandidates)
+{
+    if (File.Exists(envPath))
+    {
+        foreach (var line in File.ReadAllLines(envPath))
+        {
+            var trimmed = line.Trim();
+            if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith('#')) continue;
+            var separatorIndex = trimmed.IndexOf('=');
+            if (separatorIndex > 0)
+            {
+                var key = trimmed[..separatorIndex].Trim();
+                var value = trimmed[(separatorIndex + 1)..].Trim().Trim('"').Trim('\'');
+                Environment.SetEnvironmentVariable(key, value);
+            }
+        }
+        break;
+    }
+}
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -45,10 +78,53 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
-// Authentication & Authorization
-builder.Services.AddAuthentication().AddJwtBearer(options =>
+// Strict CORS Configuration from .env or appsettings (Not overly permissive)
+var allowedOriginsSetting = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
+    ?? builder.Configuration["Cors:AllowedOrigins"]
+    ?? builder.Configuration["CORS_ALLOWED_ORIGINS"]
+    ?? "http://localhost:3000";
+
+var allowedOrigins = allowedOriginsSetting
+    .Split(new[] { ';', ',' }, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+    .ToArray();
+
+builder.Services.AddCors(options =>
 {
-    // Local dev configuration
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials()
+              .WithExposedHeaders("ETag");
+    });
+});
+
+// Authentication & Authorization
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "RestoCoreSuperSecretDevelopmentKey2026!#*";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "RestoCore";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "RestoCore";
+var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtIssuer,
+        ValidAudience = jwtAudience,
+        IssuerSigningKey = signingKey,
+        RoleClaimType = ClaimTypes.Role,
+        NameClaimType = ClaimTypes.NameIdentifier
+    };
 });
 
 // CQRS Mediator (MIT Permissive Implementation)
@@ -82,6 +158,11 @@ builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
     });
 });
 builder.Services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<ApplicationDbContext>());
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IKitchenRepository, RestoCore.Infrastructure.Persistence.Repositories.KitchenRepository>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.ICatalogRepository, RestoCore.Infrastructure.Persistence.Repositories.CatalogRepository>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IMenuLayoutRepository, RestoCore.Infrastructure.Persistence.Repositories.MenuLayoutRepository>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.ITenantRepository, RestoCore.Infrastructure.Persistence.Repositories.TenantRepository>();
 
 // Authorization & OPA
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();
@@ -105,6 +186,7 @@ var app = builder.Build();
 
 // Configure HTTP request pipeline
 app.UseExceptionHandler();
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {
@@ -112,6 +194,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
 
 // Structured Execution Logging Middleware (correlates with Aspire Dashboard & OpenTelemetry traces)
@@ -151,11 +234,11 @@ app.Use(async (context, next) =>
     }
 });
 
-app.UseAuthentication();
 app.UseAuthorization();
 
 // Feature & System Endpoints
 app.MapHealthEndpoints();
+app.MapAuthEndpoints();
 app.MapPublicMenuEndpoints();
 app.MapAdminCatalogEndpoints();
 app.MapAdminMenuLayoutEndpoints();

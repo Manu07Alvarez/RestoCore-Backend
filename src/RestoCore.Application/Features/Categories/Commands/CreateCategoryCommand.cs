@@ -1,8 +1,8 @@
-﻿namespace RestoCore.Application.Features.Categories.Commands;
+namespace RestoCore.Application.Features.Categories.Commands;
 
 using RestoCore.Application.Common.Mediator;
-using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Domain.Entities;
 
 public record CreateCategoryCommand(
@@ -21,12 +21,17 @@ public record CategoryResponse(
 
 public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryCommand, CategoryResponse>
 {
-    private readonly IApplicationDbContext _context;
+    private readonly ICatalogRepository _catalogRepository;
+    private readonly IUnitOfWork _unitOfWork;
     private readonly ITenantContext _tenantContext;
 
-    public CreateCategoryCommandHandler(IApplicationDbContext context, ITenantContext tenantContext)
+    public CreateCategoryCommandHandler(
+        ICatalogRepository catalogRepository,
+        IUnitOfWork unitOfWork,
+        ITenantContext tenantContext)
     {
-        _context = context;
+        _catalogRepository = catalogRepository;
+        _unitOfWork = unitOfWork;
         _tenantContext = tenantContext;
     }
 
@@ -43,8 +48,8 @@ public class CreateCategoryCommandHandler : IRequestHandler<CreateCategoryComman
             IsActive = true
         };
 
-        _context.Categories.Add(category);
-        await _context.SaveChangesAsync(cancellationToken);
+        _catalogRepository.AddCategory(category);
+        await _unitOfWork.CommitAsync(cancellationToken);
 
         return new CategoryResponse(
             category.Id,

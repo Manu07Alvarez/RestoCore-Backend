@@ -78,6 +78,37 @@ services:
       - "4318:18890"   # OTLP HTTP receiver (Aspire container listens on 18890)
     restart: unless-stopped
 
+  unified-admin:
+    image: python:3.11-slim
+    container_name: restocore-unified-admin-dev
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./admin_app:/app
+    working_dir: /app
+    environment:
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=restocore_dev
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres_dev_password
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - S3_ENDPOINT_URL=http://seaweedfs:8333
+      - AWS_ACCESS_KEY_ID=any_key
+      - AWS_SECRET_ACCESS_KEY=any_secret
+      - AWS_DEFAULT_REGION=us-east-1
+    command: >
+      sh -c "pip install streamlit psycopg2-binary redis boto3 pandas && streamlit run app.py --server.port=8501 --server.address=0.0.0.0"
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seaweedfs:
+        condition: service_started
+
 volumes:
   postgres_dev_data:
   seaweedfs_data:
