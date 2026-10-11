@@ -16,4 +16,6 @@ public interface IStorageService
         CancellationToken cancellationToken = default);
 
     Task<bool> BucketExistsAsync(string bucketName, CancellationToken cancellationToken = default);
+
+    Task<bool> DeleteObjectAsync(string objectUrlOrPath, CancellationToken cancellationToken = default);
 }

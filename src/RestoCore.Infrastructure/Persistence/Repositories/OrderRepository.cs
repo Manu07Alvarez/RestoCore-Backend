@@ -32,6 +32,15 @@ public class OrderRepository : IOrderRepository
             .ToListAsync(ct);
     }
 
+    public async Task<bool> HasActiveOrdersForMenuItemAsync(Guid tenantId, Guid menuItemId, CancellationToken ct = default)
+    {
+        var activeOrders = await _context.Orders
+            .Where(o => o.TenantId == tenantId && o.Status != "delivered" && o.Status != "cancelled")
+            .ToListAsync(ct);
+
+        return activeOrders.Any(o => o.ItemsSnapshot != null && o.ItemsSnapshot.Any(i => i.MenuItemId == menuItemId));
+    }
+
     public void AddOrder(Order order)
     {
         _context.Orders.Add(order);

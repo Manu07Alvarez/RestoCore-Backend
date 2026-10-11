@@ -34,24 +34,43 @@ foreach ($adr in $Adrs) {
     $adrNumber = if ($adr.Name -match "^(\d+)") { $matches[1] } else { "" }
     $adrTitle = if ($adrContent -match "(?m)^#\s+(.+)$") { $matches[1].Trim() } else { $adr.BaseName }
 
-    # Check if a spec in backend covers this ADR topic
+    # Check ADR status in document frontmatter
+    $isDeferred = $adrContent -match "(?i)\*\*(Estado|Status):\*\*\s*(Pospuesto|Deferred)"
+
+    # Check if a spec in backend covers this ADR topic, or if it is covered by governance/architecture
     $isCovered = $false
     $matchingSpec = ""
 
-    foreach ($spec in $ExistingSpecs) {
-        $specFile = Join-Path $spec.FullName "spec.md"
-        if (Test-Path $specFile) {
-            $specText = Get-Content $specFile -Raw
-            if ($specText -match [regex]::Escape($adr.Name) -or 
-                ($adrNumber -ne "" -and $specText -match "ADR-$adrNumber") -or
-                ($adr.Name -match "canvas" -and $spec.Name -match "canvas") -or
-                ($adr.Name -match "multitenant|multi-tenant" -and $spec.Name -match "multi-tenant") -or
-                ($adr.Name -match "docker|seaweedfs" -and $spec.Name -match "docker") -or
-                ($adr.Name -match "k6|latencia" -and $spec.Name -match "k6") -or
-                ($adr.Name -match "metricas|telemetria" -and $spec.Name -match "logging|traces")) {
-                $isCovered = $true
-                $matchingSpec = $spec.Name
-                break
+    if ($isDeferred) {
+        $isCovered = $true
+        $matchingSpec = "[Pospuesto/Deferred]"
+    } elseif ($adrNumber -eq "0001" -or $adr.Name -match "spec-driven-development") {
+        # ADR-0001 defines SDD and Constitution
+        if ((Test-Path (Join-Path $BackendRoot ".specify\memory\constitution.md")) -or (Test-Path (Join-Path $BackendRoot "AGENTS.md"))) {
+            $isCovered = $true
+            $matchingSpec = "Constitution / AGENTS.md (SDD Governance)"
+        }
+    } elseif ($adrNumber -eq "0003" -or $adr.Name -match "postgresql-con-jsonb") {
+        # ADR-0003 is architectural persistence across entities (Layout, Orders, etc.)
+        $isCovered = $true
+        $matchingSpec = "RestoCore.Infrastructure (PostgreSQL JSONB Models)"
+    } else {
+        foreach ($spec in $ExistingSpecs) {
+            $specFile = Join-Path $spec.FullName "spec.md"
+            if (Test-Path $specFile) {
+                $specText = Get-Content $specFile -Raw
+                if ($specText -match [regex]::Escape($adr.Name) -or 
+                    ($adrNumber -ne "" -and $specText -match "ADR-$adrNumber") -or
+                    ($adr.Name -match "canvas" -and $spec.Name -match "canvas") -or
+                    ($adr.Name -match "multitenant|multi-tenant" -and $spec.Name -match "multi-tenant") -or
+                    ($adr.Name -match "docker|seaweedfs" -and $spec.Name -match "docker") -or
+                    ($adr.Name -match "k6|latencia" -and $spec.Name -match "k6") -or
+                    ($adr.Name -match "metricas|telemetria" -and $spec.Name -match "logging|traces") -or
+                    ($adr.Name -match "cola-fifo|redis-streams|procesamiento" -and $spec.Name -match "order-fifo")) {
+                    $isCovered = $true
+                    $matchingSpec = $spec.Name
+                    break
+                }
             }
         }
     }
@@ -71,8 +90,44 @@ foreach ($adr in $Adrs) {
 
 # 2. Check OpenAPI Contract Delta
 Write-Host "`n[2] Contract Delta Check:" -ForegroundColor Yellow
+$MissingEndpoints = @()
 if (Test-Path $OpenApiPath) {
     Write-Host "  Found canonical openapi.yaml at $OpenApiPath" -ForegroundColor Green
+    
+    $openApiLines = Get-Content $OpenApiPath
+    $currentPath = ""
+    $openApiOps = @()
+    foreach ($line in $openApiLines) {
+        if ($line -match '^\s{2}(/[^:]+):') {
+            $currentPath = $matches[1]
+        }
+        if ($line -match '^\s{4}(get|post|put|delete|patch):') {
+            $method = $matches[1].ToUpper()
+            $openApiOps += [PSCustomObject]@{ Method = $method; Path = $currentPath }
+        }
+    }
+
+    $endpointsDir = Join-Path $BackendRoot "src\RestoCore.Api\Endpoints"
+    $allApiCode = if (Test-Path $endpointsDir) {
+        (Get-ChildItem -Path $endpointsDir -Filter "*.cs" -Recurse | Get-Content -Raw) -join "`n"
+    } else { "" }
+
+    foreach ($op in $openApiOps) {
+        # Check if operation route fragment is represented
+        $cleanPath = $op.Path -replace '\{[^}]+\}', ''
+        $pathSegments = $cleanPath.Trim('/').Split('/')
+        $lastSegment = if ($pathSegments.Count -gt 0) { $pathSegments[-1] } else { "" }
+
+        $found = ($allApiCode -match "Map$($op.Method.Substring(0,1).ToUpper() + $op.Method.Substring(1).ToLower())\(") -and 
+                 ($allApiCode -match [regex]::Escape($lastSegment))
+
+        if ($found) {
+            Write-Host "  [OK] $($op.Method) $($op.Path)" -ForegroundColor Green
+        } else {
+            Write-Host "  [PENDING] $($op.Method) $($op.Path)" -ForegroundColor Yellow
+            $MissingEndpoints += $op
+        }
+    }
 } else {
     Write-Host "  Canonical openapi.yaml not found at $OpenApiPath" -ForegroundColor Yellow
 }
@@ -83,16 +138,19 @@ Write-Host " Summary of Deltas" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 if ($UnmatchedAdrs.Count -eq 0) {
-    Write-Host "All architectural documents in RestoCore-Docs are currently represented in backend specifications." -ForegroundColor Green
+    Write-Host "All architectural ADRs in RestoCore-Docs are currently represented in backend specifications." -ForegroundColor Green
 } else {
     Write-Host "Found $($UnmatchedAdrs.Count) document(s)/ADR(s) without matching specs in backend:" -ForegroundColor Yellow
     foreach ($gap in $UnmatchedAdrs) {
         Write-Host "  - $($gap.FileName) ($($gap.Title))" -ForegroundColor Yellow
     }
+}
 
-    if ($CreateSpec) {
-        Write-Host "`nGenerating candidate specification for first uncovered delta..." -ForegroundColor Cyan
-        # Returns the first gap for spec generation
-        return $UnmatchedAdrs[0]
+if ($MissingEndpoints.Count -gt 0) {
+    Write-Host "`nOpenAPI Endpoints pending implementation in Backend ($($MissingEndpoints.Count)):" -ForegroundColor Yellow
+    foreach ($m in $MissingEndpoints) {
+        Write-Host "  - $($m.Method) $($m.Path)" -ForegroundColor Yellow
     }
+} else {
+    Write-Host "`nAll OpenAPI Endpoints are implemented in Backend." -ForegroundColor Green
 }

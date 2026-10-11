@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Domain.Entities;
+namespace RestoCore.Domain.Entities;
 
 using RestoCore.Domain.Common;
 
@@ -14,6 +14,9 @@ public class MenuItem : BaseEntity, ITenantScopedEntity
     public int DisplayOrder { get; set; }
     public string[] Allergens { get; set; } = Array.Empty<string>();
     public string[] DietaryLabels { get; set; } = Array.Empty<string>();
+
+    public bool IsDeleted { get; set; } = false;
+    public DateTimeOffset? DeletedAt { get; set; }
 
     public Tenant? Tenant { get; set; }
     public Category? Category { get; set; }

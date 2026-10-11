@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Infrastructure.Persistence.Configurations;
+namespace RestoCore.Infrastructure.Persistence.Configurations;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,9 +27,14 @@ public class MenuConfiguration : IEntityTypeConfiguration<Category>, IEntityType
         builder.Property(m => m.Name).HasMaxLength(100).IsRequired();
         builder.Property(m => m.BasePrice).HasPrecision(10, 2).IsRequired();
         builder.Property(m => m.ImageUrl).HasMaxLength(300);
+        builder.Property(m => m.IsDeleted).HasDefaultValue(false);
+        builder.Property(m => m.DeletedAt).IsRequired(false);
 
-        builder.HasIndex(m => new { m.TenantId, m.CategoryId, m.DisplayOrder });
+        builder.HasIndex(m => new { m.TenantId, m.CategoryId, m.DisplayOrder })
+            .HasFilter("is_deleted = false");
         builder.HasIndex(m => new { m.TenantId, m.IsAvailable });
+        builder.HasIndex(m => m.DeletedAt)
+            .HasFilter("is_deleted = true");
 
         builder.HasOne(m => m.Tenant).WithMany(t => t.MenuItems).HasForeignKey(m => m.TenantId).OnDelete(DeleteBehavior.Cascade);
         builder.HasOne(m => m.Category).WithMany(c => c.Items).HasForeignKey(m => m.CategoryId).OnDelete(DeleteBehavior.Restrict);

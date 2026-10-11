@@ -56,6 +56,35 @@ public class SeaweedStorageService : IStorageService
         return new PresignedUploadResponse(presignedUrl, publicUrl, expiresAt);
     }
 
+    public async Task<bool> DeleteObjectAsync(string objectUrlOrPath, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(objectUrlOrPath)) return true;
+
+        try
+        {
+            var key = objectUrlOrPath;
+            if (Uri.TryCreate(objectUrlOrPath, UriKind.Absolute, out var uri))
+            {
+                var path = uri.AbsolutePath.TrimStart('/');
+                var parts = path.Split('/', 2);
+                key = parts.Length > 1 ? parts[1] : path;
+            }
+
+            var request = new DeleteObjectRequest
+            {
+                BucketName = _bucketName,
+                Key = key
+            };
+
+            await _s3Client.DeleteObjectAsync(request, cancellationToken);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public async Task<bool> BucketExistsAsync(string bucketName, CancellationToken cancellationToken = default)
     {
         try
