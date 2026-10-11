@@ -3,7 +3,7 @@ namespace RestoCore.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore.Storage;
 using RestoCore.Application.Common.Interfaces;
 
-public class UnitOfWork : IUnitOfWork, IAsyncDisposable
+public class UnitOfWork : IUnitOfWork, IAsyncDisposable, IDisposable
 {
     private readonly ApplicationDbContext _context;
     private IDbContextTransaction? _currentTransaction;
@@ -72,5 +72,11 @@ public class UnitOfWork : IUnitOfWork, IAsyncDisposable
             await _currentTransaction.DisposeAsync();
             _currentTransaction = null;
         }
+    }
+
+    public void Dispose()
+    {
+        _currentTransaction?.Dispose();
+        _currentTransaction = null;
     }
 }

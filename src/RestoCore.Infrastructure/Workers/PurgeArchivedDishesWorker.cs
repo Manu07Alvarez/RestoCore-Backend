@@ -50,7 +50,7 @@ public class PurgeArchivedDishesWorker : BackgroundService
 
     public async Task<int> PurgeExpiredDishesAsync(CancellationToken cancellationToken = default)
     {
-        using var scope = _serviceProvider.CreateScope();
+        await using var scope = _serviceProvider.CreateAsyncScope();
         var catalogRepository = scope.ServiceProvider.GetRequiredService<ICatalogRepository>();
         var storageService = scope.ServiceProvider.GetRequiredService<IStorageService>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();

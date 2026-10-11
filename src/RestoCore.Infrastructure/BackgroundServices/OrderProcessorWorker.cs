@@ -35,7 +35,7 @@ public class OrderProcessorWorker : BackgroundService
         {
             try
             {
-                using var scope = _serviceProvider.CreateScope();
+                await using var scope = _serviceProvider.CreateAsyncScope();
                 var queueService = scope.ServiceProvider.GetRequiredService<IOrderQueueService>();
                 var tenantRepo = scope.ServiceProvider.GetRequiredService<ITenantRepository>();
                 var catalogRepo = scope.ServiceProvider.GetRequiredService<ICatalogRepository>();
