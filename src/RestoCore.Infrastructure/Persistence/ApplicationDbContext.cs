@@ -40,7 +40,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         base.OnModelCreating(modelBuilder);
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
 
-        // Global Multi-Tenant Query Filter
+        // Global Multi-Tenant and Soft-Delete Query Filters
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {
             if (typeof(ITenantScopedEntity).IsAssignableFrom(entityType.ClrType))
@@ -50,9 +50,17 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 var tenantIdValue = Expression.Property(Expression.Constant(this), nameof(CurrentTenantId));
                 
                 // e.TenantId == CurrentTenantId
-                var comparison = Expression.Equal(property, tenantIdValue);
-                var lambda = Expression.Lambda(comparison, parameter);
+                Expression comparison = Expression.Equal(property, tenantIdValue);
 
+                // If entity is MenuItem, append: && !e.IsDeleted
+                if (entityType.ClrType == typeof(MenuItem))
+                {
+                    var isDeletedProp = Expression.Property(parameter, nameof(MenuItem.IsDeleted));
+                    var notDeleted = Expression.Not(isDeletedProp);
+                    comparison = Expression.AndAlso(comparison, notDeleted);
+                }
+
+                var lambda = Expression.Lambda(comparison, parameter);
                 modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
             }
         }

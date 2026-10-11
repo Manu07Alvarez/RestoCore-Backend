@@ -174,8 +174,9 @@ builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messagin
 builder.Services.AddSingleton<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
 builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>());
 
-// Background FIFO Worker
+// Background Workers
 builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
+builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
 
 // Authorization & OPA
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();

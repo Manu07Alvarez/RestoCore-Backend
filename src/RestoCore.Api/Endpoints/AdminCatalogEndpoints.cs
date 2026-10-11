@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Api.Endpoints;
+namespace RestoCore.Api.Endpoints;
 
 using RestoCore.Application.Common.Mediator;
 using Microsoft.AspNetCore.Authorization;
@@ -33,6 +33,74 @@ public static class AdminCatalogEndpoints
         .WithName("CreateMenuItem")
         .Produces<MenuItemResponse>(StatusCodes.Status201Created)
         .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPut("/items/{id:guid}", async (Guid id, UpdateMenuItemCommand command, ISender sender) =>
+        {
+            var actualCommand = command with { Id = id };
+            var result = await sender.Send(actualCommand);
+            return Results.Ok(result);
+        })
+        .WithName("UpdateMenuItem")
+        .Produces<MenuItemResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPatch("/items/{id:guid}", async (Guid id, PatchMenuItemCommand command, ISender sender) =>
+        {
+            var actualCommand = command with { Id = id };
+            var result = await sender.Send(actualCommand);
+            return Results.Ok(result);
+        })
+        .WithName("PatchMenuItem")
+        .Produces<MenuItemResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapDelete("/items/{id:guid}", async (Guid id, ISender sender) =>
+        {
+            try
+            {
+                var result = await sender.Send(new DeleteMenuItemCommand(id));
+                return Results.Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { detail = ex.Message });
+            }
+        })
+        .WithName("DeleteMenuItem")
+        .Produces<RestoCore.Application.Features.MenuItems.DTOs.MenuItemArchiveResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPost("/items/{id:guid}/restore", async (Guid id, ISender sender) =>
+        {
+            try
+            {
+                var result = await sender.Send(new RestoreMenuItemCommand(id));
+                return Results.Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return Results.NotFound(new { detail = ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.BadRequest(new { detail = ex.Message });
+            }
+        })
+        .WithName("RestoreMenuItem")
+        .Produces<MenuItemResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden);
 

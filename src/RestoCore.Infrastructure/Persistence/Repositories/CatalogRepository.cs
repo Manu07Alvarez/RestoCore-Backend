@@ -41,6 +41,21 @@ public class CatalogRepository : ICatalogRepository
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
+    public async Task<MenuItem?> GetMenuItemByIdWithDeletedAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        return await _context.MenuItems
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(m => m.Id == id && m.TenantId == _context.CurrentTenantId, cancellationToken);
+    }
+
+    public async Task<List<MenuItem>> GetArchivedMenuItemsOlderThanAsync(DateTimeOffset threshold, CancellationToken cancellationToken = default)
+    {
+        return await _context.MenuItems
+            .IgnoreQueryFilters()
+            .Where(m => m.IsDeleted && m.DeletedAt != null && m.DeletedAt <= threshold)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<MenuItem?> GetMenuItemWithModifiersAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.MenuItems

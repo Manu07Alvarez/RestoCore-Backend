@@ -90,8 +90,44 @@ foreach ($adr in $Adrs) {
 
 # 2. Check OpenAPI Contract Delta
 Write-Host "`n[2] Contract Delta Check:" -ForegroundColor Yellow
+$MissingEndpoints = @()
 if (Test-Path $OpenApiPath) {
     Write-Host "  Found canonical openapi.yaml at $OpenApiPath" -ForegroundColor Green
+    
+    $openApiLines = Get-Content $OpenApiPath
+    $currentPath = ""
+    $openApiOps = @()
+    foreach ($line in $openApiLines) {
+        if ($line -match '^\s{2}(/[^:]+):') {
+            $currentPath = $matches[1]
+        }
+        if ($line -match '^\s{4}(get|post|put|delete|patch):') {
+            $method = $matches[1].ToUpper()
+            $openApiOps += [PSCustomObject]@{ Method = $method; Path = $currentPath }
+        }
+    }
+
+    $endpointsDir = Join-Path $BackendRoot "src\RestoCore.Api\Endpoints"
+    $allApiCode = if (Test-Path $endpointsDir) {
+        (Get-ChildItem -Path $endpointsDir -Filter "*.cs" -Recurse | Get-Content -Raw) -join "`n"
+    } else { "" }
+
+    foreach ($op in $openApiOps) {
+        # Check if operation route fragment is represented
+        $cleanPath = $op.Path -replace '\{[^}]+\}', ''
+        $pathSegments = $cleanPath.Trim('/').Split('/')
+        $lastSegment = if ($pathSegments.Count -gt 0) { $pathSegments[-1] } else { "" }
+
+        $found = ($allApiCode -match "Map$($op.Method.Substring(0,1).ToUpper() + $op.Method.Substring(1).ToLower())\(") -and 
+                 ($allApiCode -match [regex]::Escape($lastSegment))
+
+        if ($found) {
+            Write-Host "  [OK] $($op.Method) $($op.Path)" -ForegroundColor Green
+        } else {
+            Write-Host "  [PENDING] $($op.Method) $($op.Path)" -ForegroundColor Yellow
+            $MissingEndpoints += $op
+        }
+    }
 } else {
     Write-Host "  Canonical openapi.yaml not found at $OpenApiPath" -ForegroundColor Yellow
 }
@@ -102,16 +138,19 @@ Write-Host " Summary of Deltas" -ForegroundColor Cyan
 Write-Host "==========================================================" -ForegroundColor Cyan
 
 if ($UnmatchedAdrs.Count -eq 0) {
-    Write-Host "All architectural documents in RestoCore-Docs are currently represented in backend specifications." -ForegroundColor Green
+    Write-Host "All architectural ADRs in RestoCore-Docs are currently represented in backend specifications." -ForegroundColor Green
 } else {
     Write-Host "Found $($UnmatchedAdrs.Count) document(s)/ADR(s) without matching specs in backend:" -ForegroundColor Yellow
     foreach ($gap in $UnmatchedAdrs) {
         Write-Host "  - $($gap.FileName) ($($gap.Title))" -ForegroundColor Yellow
     }
+}
 
-    if ($CreateSpec) {
-        Write-Host "`nGenerating candidate specification for first uncovered delta..." -ForegroundColor Cyan
-        # Returns the first gap for spec generation
-        return $UnmatchedAdrs[0]
+if ($MissingEndpoints.Count -gt 0) {
+    Write-Host "`nOpenAPI Endpoints pending implementation in Backend ($($MissingEndpoints.Count)):" -ForegroundColor Yellow
+    foreach ($m in $MissingEndpoints) {
+        Write-Host "  - $($m.Method) $($m.Path)" -ForegroundColor Yellow
     }
+} else {
+    Write-Host "`nAll OpenAPI Endpoints are implemented in Backend." -ForegroundColor Green
 }
