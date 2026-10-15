@@ -9,6 +9,9 @@ public class Tenant : BaseEntity
     public string Slug { get; set; } = string.Empty;
     public string? CustomDomain { get; set; }
     public string Status { get; set; } = "Active";
+    public string? PhoneNumber { get; set; }
+    public string? Address { get; set; }
+    public string? BusinessHours { get; set; }
     public BrandingConfig BrandingConfig { get; set; } = new();
     public LayoutConfig? LayoutConfig { get; set; }
     public string? CurrentVersionHash { get; set; }

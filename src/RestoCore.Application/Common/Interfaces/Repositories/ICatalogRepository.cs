@@ -4,8 +4,10 @@ using RestoCore.Domain.Entities;
 
 public interface ICatalogRepository
 {
+    Task<List<Category>> GetCategoriesByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default);
     Task<Category?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> CategoryExistsAsync(string name, CancellationToken cancellationToken = default);
+    Task<bool> HasMenuItemsForCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default);
     void AddCategory(Category category);
     void RemoveCategory(Category category);
 

@@ -288,6 +288,7 @@ app.MapHealthEndpoints();
 app.MapAuthEndpoints();
 app.MapPublicMenuEndpoints();
 app.MapAdminCatalogEndpoints();
+app.MapAdminProfileEndpoints();
 app.MapAdminMenuLayoutEndpoints();
 app.MapKitchenEndpoints();
 app.MapAdminTenantEndpoints();

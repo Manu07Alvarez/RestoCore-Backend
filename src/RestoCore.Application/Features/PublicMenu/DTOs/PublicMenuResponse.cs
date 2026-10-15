@@ -6,6 +6,9 @@ public class PublicMenuResponse
 {
     public string TenantName { get; set; } = string.Empty;
     public string TenantSlug { get; set; } = string.Empty;
+    public string? PhoneNumber { get; set; }
+    public string? Address { get; set; }
+    public string? BusinessHours { get; set; }
     public int? TableNumber { get; set; }
     public PublicBrandingDto Branding { get; set; } = new();
     public LayoutConfigDto? LayoutConfig { get; set; }
