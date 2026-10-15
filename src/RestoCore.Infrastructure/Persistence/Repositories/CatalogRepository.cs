@@ -13,6 +13,15 @@ public class CatalogRepository : ICatalogRepository
         _context = context;
     }
 
+    public async Task<List<Category>> GetCategoriesByTenantAsync(Guid tenantId, CancellationToken cancellationToken = default)
+    {
+        return await _context.Categories
+            .Where(c => c.TenantId == tenantId)
+            .OrderBy(c => c.DisplayOrder)
+            .ThenBy(c => c.Name)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<Category?> GetCategoryByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.Categories
@@ -23,6 +32,13 @@ public class CatalogRepository : ICatalogRepository
     {
         return await _context.Categories
             .AnyAsync(c => c.Name.ToLower() == name.ToLower(), cancellationToken);
+    }
+
+    public async Task<bool> HasMenuItemsForCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
+    {
+        return await _context.MenuItems
+            .IgnoreQueryFilters()
+            .AnyAsync(m => m.CategoryId == categoryId && m.TenantId == _context.CurrentTenantId, cancellationToken);
     }
 
     public void AddCategory(Category category)

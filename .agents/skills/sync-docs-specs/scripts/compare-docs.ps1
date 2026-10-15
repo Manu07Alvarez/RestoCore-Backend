@@ -114,12 +114,16 @@ if (Test-Path $OpenApiPath) {
 
     foreach ($op in $openApiOps) {
         # Check if operation route fragment is represented
-        $cleanPath = $op.Path -replace '\{[^}]+\}', ''
-        $pathSegments = $cleanPath.Trim('/').Split('/')
-        $lastSegment = if ($pathSegments.Count -gt 0) { $pathSegments[-1] } else { "" }
+        # e.g., /api/v1/admin/categories/{id} -> "/categories/{id" or "/categories/{id:guid}"
+        $pathTemplate = $op.Path -replace '\{id\}', '{id'
+        $methodVerb = "Map$($op.Method.Substring(0,1).ToUpper() + $op.Method.Substring(1).ToLower())"
 
-        $found = ($allApiCode -match "Map$($op.Method.Substring(0,1).ToUpper() + $op.Method.Substring(1).ToLower())\(") -and 
-                 ($allApiCode -match [regex]::Escape($lastSegment))
+        # Check if code has the verb and the specific subroute
+        $subroute = $op.Path.Substring($op.Path.LastIndexOf('/')) -replace '\{id\}', '{id'
+        $parentSubroute = ($op.Path -split '/')[-2] + $subroute
+
+        $found = ($allApiCode -match "$methodVerb\(`"[^`"]*$subroute") -or
+                 ($allApiCode -match "$methodVerb\(`"[^`"]*$parentSubroute")
 
         if ($found) {
             Write-Host "  [OK] $($op.Method) $($op.Path)" -ForegroundColor Green

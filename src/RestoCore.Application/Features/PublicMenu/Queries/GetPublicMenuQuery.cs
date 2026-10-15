@@ -68,6 +68,9 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
         {
             TenantName = tenant.Name,
             TenantSlug = tenant.Slug,
+            PhoneNumber = tenant.PhoneNumber,
+            Address = tenant.Address,
+            BusinessHours = tenant.BusinessHours,
             TableNumber = tableNumber,
             Branding = new PublicBrandingDto
             {

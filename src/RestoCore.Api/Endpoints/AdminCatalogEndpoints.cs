@@ -3,6 +3,7 @@ namespace RestoCore.Api.Endpoints;
 using RestoCore.Application.Common.Mediator;
 using Microsoft.AspNetCore.Authorization;
 using RestoCore.Application.Features.Categories.Commands;
+using RestoCore.Application.Features.Categories.Queries;
 using RestoCore.Application.Features.MenuItems.Commands;
 using RestoCore.Application.Features.Tenants.Commands;
 
@@ -14,6 +15,27 @@ public static class AdminCatalogEndpoints
             .RequireAuthorization("TenantAdminOnly")
             .WithTags("Admin - Catalog");
 
+        group.MapGet("/categories", async (ISender sender) =>
+        {
+            var result = await sender.Send(new GetCategoriesQuery());
+            return Results.Ok(result);
+        })
+        .WithName("GetAdminCategories")
+        .Produces<List<CategoryResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapGet("/categories/{id:guid}", async (Guid id, ISender sender) =>
+        {
+            var result = await sender.Send(new GetCategoryByIdQuery(id));
+            return Results.Ok(result);
+        })
+        .WithName("GetAdminCategoryById")
+        .Produces<CategoryResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
         group.MapPost("/categories", async (CreateCategoryCommand command, ISender sender) =>
         {
             var result = await sender.Send(command);
@@ -22,6 +44,51 @@ public static class AdminCatalogEndpoints
         .WithName("CreateCategory")
         .Produces<CategoryResponse>(StatusCodes.Status201Created)
         .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPut("/categories/{id:guid}", async (Guid id, UpdateCategoryCommand command, ISender sender) =>
+        {
+            var actualCommand = command with { Id = id };
+            var result = await sender.Send(actualCommand);
+            return Results.Ok(result);
+        })
+        .WithName("UpdateCategory")
+        .Produces<CategoryResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPatch("/categories/{id:guid}", async (Guid id, PatchCategoryCommand command, ISender sender) =>
+        {
+            var actualCommand = command with { Id = id };
+            var result = await sender.Send(actualCommand);
+            return Results.Ok(result);
+        })
+        .WithName("PatchCategory")
+        .Produces<CategoryResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapDelete("/categories/{id:guid}", async (Guid id, ISender sender) =>
+        {
+            try
+            {
+                await sender.Send(new DeleteCategoryCommand(id));
+                return Results.NoContent();
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Results.Conflict(new { detail = ex.Message });
+            }
+        })
+        .WithName("DeleteCategory")
+        .Produces(StatusCodes.Status204NoContent)
+        .Produces(StatusCodes.Status404NotFound)
+        .Produces(StatusCodes.Status409Conflict)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden);
 

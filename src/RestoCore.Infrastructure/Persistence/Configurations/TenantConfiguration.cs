@@ -19,6 +19,9 @@ public class TenantConfiguration : IEntityTypeConfiguration<Tenant>
         builder.HasIndex(t => t.CustomDomain).IsUnique();
 
         builder.Property(t => t.Status).HasMaxLength(20).IsRequired();
+        builder.Property(t => t.PhoneNumber).HasMaxLength(50);
+        builder.Property(t => t.Address).HasMaxLength(255);
+        builder.Property(t => t.BusinessHours).HasMaxLength(255);
 
         builder.OwnsOne(t => t.BrandingConfig, branding =>
         {
