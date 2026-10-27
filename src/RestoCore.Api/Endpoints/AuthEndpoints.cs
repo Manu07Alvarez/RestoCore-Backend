@@ -5,6 +5,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
+using RestoCore.Application.Common.Mediator;
+using RestoCore.Application.Features.Auth.Commands;
 
 public static class AuthEndpoints
 {
@@ -13,72 +15,34 @@ public static class AuthEndpoints
         var group = app.MapGroup("/api/v1/auth")
             .WithTags("Authentication & Identity");
 
-        group.MapPost("/login", ([FromBody] LoginRequest request, IConfiguration configuration) =>
+        group.MapPost("/login", async ([FromBody] LoginRequest request, ISender sender, IConfiguration configuration, CancellationToken cancellationToken) =>
         {
-            var email = request.Email?.Trim().ToLowerInvariant() ?? string.Empty;
-            var password = request.Password?.Trim() ?? string.Empty;
-
-            // Seeded Dev Accounts:
-            // 1. Tenant Owner / Admin
-            // 2. Kitchen Staff
-            // 3. Platform SuperAdmin
-            SeededUser? matchedUser = null;
-
-            if ((email == "admin@bistrogourmet.com" || email == "admin@restocore.com") && (password == "admin123" || password == "admin" || !string.IsNullOrEmpty(password)))
+            try
             {
-                matchedUser = new SeededUser(
-                    Id: "dev-admin-marco",
-                    Email: email,
-                    Name: "Chef Marco",
-                    PrimaryRole: "owner",
-                    Roles: new[] { "owner", "tenant_admin", "kitchen_staff" },
-                    TenantId: "11111111-1111-1111-1111-111111111111",
-                    TenantSlug: "el-gato-negro"
-                );
-            }
-            else if (email == "cocina@restocore.com" && (password == "cocina123" || !string.IsNullOrEmpty(password)))
-            {
-                matchedUser = new SeededUser(
-                    Id: "dev-cook-pablo",
-                    Email: email,
-                    Name: "Cocinero Pablo",
-                    PrimaryRole: "cook",
-                    Roles: new[] { "cook", "kitchen_staff" },
-                    TenantId: "11111111-1111-1111-1111-111111111111",
-                    TenantSlug: "el-gato-negro"
-                );
-            }
-            else if (email == "superadmin@restocore.com" && (password == "admin123" || !string.IsNullOrEmpty(password)))
-            {
-                matchedUser = new SeededUser(
-                    Id: "dev-superadmin",
-                    Email: email,
-                    Name: "Super Administrador",
-                    PrimaryRole: "super_admin",
-                    Roles: new[] { "super_admin" },
-                    TenantId: null,
-                    TenantSlug: null
-                );
-            }
+                var authenticatedUser = await sender.Send(
+                    new LoginCommand(request.Email ?? string.Empty, request.Password ?? string.Empty),
+                    cancellationToken);
 
-            if (matchedUser == null)
-            {
-                return Results.Json(new { title = "Unauthorized", status = 401, detail = "Credenciales inválidas" }, statusCode: StatusCodes.Status401Unauthorized);
+                var token = GenerateJwtToken(authenticatedUser, configuration);
+
+                return Results.Ok(new LoginResponse(
+                    Token: token,
+                    TenantId: authenticatedUser.TenantId,
+                    TenantSlug: authenticatedUser.TenantSlug,
+                    User: new UserProfileResponse(
+                        Id: authenticatedUser.Id,
+                        Email: authenticatedUser.Email,
+                        Name: authenticatedUser.Name,
+                        Role: authenticatedUser.PrimaryRole
+                    )
+                ));
             }
-
-            var token = GenerateJwtToken(matchedUser, configuration);
-
-            return Results.Ok(new LoginResponse(
-                Token: token,
-                TenantId: matchedUser.TenantId,
-                TenantSlug: matchedUser.TenantSlug,
-                User: new UserProfileResponse(
-                    Id: matchedUser.Id,
-                    Email: matchedUser.Email,
-                    Name: matchedUser.Name,
-                    Role: matchedUser.PrimaryRole
-                )
-            ));
+            catch (UnauthorizedAccessException)
+            {
+                return Results.Json(
+                    new { title = "Unauthorized", status = 401, detail = "Credenciales inválidas" },
+                    statusCode: StatusCodes.Status401Unauthorized);
+            }
         })
         .AllowAnonymous()
         .WithName("Login")
@@ -110,7 +74,7 @@ public static class AuthEndpoints
         return app;
     }
 
-    private static string GenerateJwtToken(SeededUser user, IConfiguration configuration)
+    private static string GenerateJwtToken(AuthenticatedUserResult user, IConfiguration configuration)
     {
         var secretKey = configuration["Jwt:Key"] ?? "RestoCoreSuperSecretDevelopmentKey2026!#*";
         var issuer = configuration["Jwt:Issuer"] ?? "RestoCore";
@@ -160,16 +124,6 @@ public static class AuthEndpoints
 }
 
 public record LoginRequest(string Email, string Password);
-
-public record SeededUser(
-    string Id,
-    string Email,
-    string Name,
-    string PrimaryRole,
-    string[] Roles,
-    string? TenantId,
-    string? TenantSlug
-);
 
 public record UserProfileResponse(
     string Id,

@@ -1,8 +1,8 @@
 {
   ".specify/feature.json": {
-    "mtime": 1791853454.795602,
-    "seen": 1791853479.977453,
-    "ast_hash": "bde91db2d7a2fef5b0fda2bb874f7661",
+    "mtime": 1793059486.8836906,
+    "seen": 1793059861.8569741,
+    "ast_hash": "c02d201872cc3b0dc950f8bde9965246",
     "semantic_hash": ""
   },
   ".specify/init-options.json": {
@@ -138,10 +138,10 @@
     "semantic_hash": "256c8a5a7fd9ae5c3ff40ce60dea7dea"
   },
   "src/RestoCore.Api/Endpoints/AuthEndpoints.cs": {
-    "mtime": 1791564285.2069943,
-    "seen": 1791663031.7459667,
-    "ast_hash": "4c304e1e9166d10b564a0106dcf1deb6",
-    "semantic_hash": "4c304e1e9166d10b564a0106dcf1deb6"
+    "mtime": 1793059723.5239532,
+    "seen": 1793059861.85702,
+    "ast_hash": "635d83eca1719d1dc2efa8b7d95f2315",
+    "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/HealthEndpoints.cs": {
     "mtime": 1789006421.185502,
@@ -174,9 +174,9 @@
     "semantic_hash": "492a1bb0be34660218c0d68a93c87cb1"
   },
   "src/RestoCore.Api/Program.cs": {
-    "mtime": 1792106929.7382698,
-    "seen": 1792107088.1912117,
-    "ast_hash": "b5a9796e4656e0ad8b161dd85c645de5",
+    "mtime": 1793059819.1663787,
+    "seen": 1793059861.8570323,
+    "ast_hash": "e522c77a18ad152f17353c2cceb1aa16",
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Properties/launchSettings.json": {
@@ -204,10 +204,10 @@
     "semantic_hash": "9a4f2cc1b3043544f0a1ce4cd6d0932f"
   },
   "src/RestoCore.Application/Common/Interfaces/IApplicationDbContext.cs": {
-    "mtime": 1789785432.8467445,
-    "seen": 1791663031.745978,
-    "ast_hash": "7c7759bac9a7968e17ed4c7fd6d8e7cc",
-    "semantic_hash": "7c7759bac9a7968e17ed4c7fd6d8e7cc"
+    "mtime": 1793059656.8471332,
+    "seen": 1793059861.8570402,
+    "ast_hash": "8e4b0a229d2fc62d02ff4a6018410ab4",
+    "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/ICdnPurgeService.cs": {
     "mtime": 1789700016.219012,
@@ -474,9 +474,9 @@
     "semantic_hash": "67c90e40dee71ac4aa19a46c25903275"
   },
   "src/RestoCore.Infrastructure/Persistence/ApplicationDbContext.cs": {
-    "mtime": 1791705764.9818966,
-    "seen": 1791706432.0586653,
-    "ast_hash": "354f174a21d750a1db446c250cf61d51",
+    "mtime": 1793059658.841735,
+    "seen": 1793059861.8571734,
+    "ast_hash": "45c0503193c6438840ce0b5a009d2458",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Configurations/MenuConfiguration.cs": {
@@ -834,9 +834,9 @@
     "semantic_hash": "eba6943b2a2f6407162ae12e0218bdac"
   },
   "AGENTS.md": {
-    "mtime": 1792105562.6846251,
-    "seen": 1792107088.191466,
-    "ast_hash": "aedcfbd37f4511a7f0f59e6c0878952d",
+    "mtime": 1793059616.3605478,
+    "seen": 1793059861.8573127,
+    "ast_hash": "0508ba4c658e7b62d236d10fd9f30ddd",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1584,9 +1584,117 @@
     "semantic_hash": ""
   },
   "specs/009-category-abmc-restaurant-profile/tasks.md": {
-    "mtime": 1792106269.7291243,
-    "seen": 1792107088.1915796,
-    "ast_hash": "44556914ec4c0bff03d16f1de68d3120",
+    "mtime": 1792107125.7054913,
+    "seen": 1793059861.8574257,
+    "ast_hash": "36ca8c124c8fa79fbf7b6c88ab0caf55",
+    "semantic_hash": ""
+  },
+  "scripts/seed-db.ps1": {
+    "mtime": 1793059781.883906,
+    "seen": 1793059861.8570073,
+    "ast_hash": "adc53bc8db5162d45f92275fdd952ebb",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Common/Interfaces/IPasswordHasher.cs": {
+    "mtime": 1793059647.3169215,
+    "seen": 1793059861.8570468,
+    "ast_hash": "fbe3ed0e8cd1ae126ed520669b5688ed",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Common/Interfaces/Repositories/IUserRepository.cs": {
+    "mtime": 1793059650.010388,
+    "seen": 1793059861.8570638,
+    "ast_hash": "bf08041cc4fc8246912da104ede555c4",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Features/Auth/Commands/LoginCommand.cs": {
+    "mtime": 1793059720.3166685,
+    "seen": 1793059861.8570693,
+    "ast_hash": "71c032eb0c4b014d988a600d4931066e",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Domain/Entities/User.cs": {
+    "mtime": 1793059643.0990567,
+    "seen": 1793059861.857153,
+    "ast_hash": "80363b54092c1f0f40c665b354c4bb73",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Infrastructure/Identity/PasswordHasher.cs": {
+    "mtime": 1793059652.9276698,
+    "seen": 1793059861.857167,
+    "ast_hash": "e5430ba0f8409875dc37cddc951e658b",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Infrastructure/Persistence/Configurations/UserConfiguration.cs": {
+    "mtime": 1793059654.518265,
+    "seen": 1793059861.857183,
+    "ast_hash": "9dd108b85e6398ee81ced9c9690af8df",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Infrastructure/Persistence/Repositories/UserRepository.cs": {
+    "mtime": 1793059660.8724477,
+    "seen": 1793059861.8572004,
+    "ast_hash": "f27f95fda97d95c209eb6e00851e6d34",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Infrastructure/Persistence/Seed/DatabaseSeeder.cs": {
+    "mtime": 1793059778.874347,
+    "seen": 1793059861.8572016,
+    "ast_hash": "ae8db9ca43f407804ec4025869f44a34",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Features/Auth/LoginCommandHandlerTests.cs": {
+    "mtime": 1793059718.2842636,
+    "seen": 1793059861.8572397,
+    "ast_hash": "9fd41575614acca01c20c128313b360b",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Features/Auth/PasswordHasherTests.cs": {
+    "mtime": 1793059709.8980682,
+    "seen": 1793059861.857241,
+    "ast_hash": "1718b2d05da54bd5310fedfbd9102ad3",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/contracts/contracts.md": {
+    "mtime": 1793059573.3406148,
+    "seen": 1793059861.857427,
+    "ast_hash": "cba5b26111cb6b645657538d369fb17c",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/data-model.md": {
+    "mtime": 1793059571.0603378,
+    "seen": 1793059861.8574283,
+    "ast_hash": "d1425d7c285557f25c85cf20cded3060",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/plan.md": {
+    "mtime": 1793059612.3244395,
+    "seen": 1793059861.8574295,
+    "ast_hash": "5dbaf3c86b02f82316a8dab50f465e2a",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/quickstart.md": {
+    "mtime": 1793059610.598166,
+    "seen": 1793059861.8574307,
+    "ast_hash": "8bafb570c9c6b22bf259727b344b7aaf",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/research.md": {
+    "mtime": 1793059567.3060303,
+    "seen": 1793059861.8574321,
+    "ast_hash": "7088fa60801331295d5e8b776769af92",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/spec.md": {
+    "mtime": 1793059560.418279,
+    "seen": 1793059861.8574333,
+    "ast_hash": "d14422fa90655a3a92ddf373dfb09d42",
+    "semantic_hash": ""
+  },
+  "specs/010-database-user-auth-and-seeding/tasks.md": {
+    "mtime": 1793059614.199005,
+    "seen": 1793059861.8574343,
+    "ast_hash": "76d45bbeaac204e8b04b17afa8cd0e57",
     "semantic_hash": ""
   }
 }

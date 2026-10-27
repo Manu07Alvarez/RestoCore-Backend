@@ -34,6 +34,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<MenuPublishJob> MenuPublishJobs => Set<MenuPublishJob>();
     public DbSet<Order> Orders => Set<Order>();
+    public DbSet<User> Users => Set<User>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

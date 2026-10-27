@@ -12,6 +12,7 @@ public interface IApplicationDbContext
     DbSet<ModifierOption> ModifierOptions { get; }
     DbSet<Table> Tables { get; }
     DbSet<MenuPublishJob> MenuPublishJobs { get; }
+    DbSet<User> Users { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }
