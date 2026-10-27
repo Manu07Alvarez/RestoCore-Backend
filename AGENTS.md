@@ -48,5 +48,5 @@ El agente debe ejecutar y seguir los flujos correspondientes a las habilidades d
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan:
-specs/009-category-abmc-restaurant-profile/plan.md
+specs/010-database-user-auth-and-seeding/plan.md
 <!-- SPECKIT END -->

@@ -134,12 +134,14 @@ builder.Services.AddApplicationMediator(typeof(GetPublicMenuQuery).Assembly);
 builder.Services.AddScoped<ITenantContext, TenantContext>();
 
 // Services
+builder.Services.AddSingleton<IPasswordHasher, RestoCore.Infrastructure.Identity.PasswordHasher>();
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
 builder.Services.AddSingleton<ICdnPurgeService, LocalDevelopmentCdnPurgeService>();
 builder.Services.AddScoped<RestoCore.Application.Features.MenuLayout.Services.IMenuCompilationService, RestoCore.Infrastructure.Services.Compilation.MenuCompilationService>();
 
 // Caching (Redis)
+var isSeedOnly = args.Contains("--seed", StringComparer.OrdinalIgnoreCase);
 var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -164,19 +166,23 @@ builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IMenuLayoutRepository, RestoCore.Infrastructure.Persistence.Repositories.MenuLayoutRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.ITenantRepository, RestoCore.Infrastructure.Persistence.Repositories.TenantRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IOrderRepository, RestoCore.Infrastructure.Persistence.Repositories.OrderRepository>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IUserRepository, RestoCore.Infrastructure.Persistence.Repositories.UserRepository>();
 
-// Redis Streams & Order Queue
-var redisMuxer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig);
-builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMuxer);
-builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messaging.RedisOrderQueueService>();
+if (!isSeedOnly)
+{
+    // Redis Streams & Order Queue
+    var redisMuxer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig);
+    builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMuxer);
+    builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messaging.RedisOrderQueueService>();
 
-// WebSockets & Notifications
-builder.Services.AddSingleton<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
-builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>());
+    // WebSockets & Notifications
+    builder.Services.AddSingleton<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
+    builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>());
 
-// Background Workers
-builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
-builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
+    // Background Workers
+    builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
+    builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
+}
 
 // Authorization & OPA
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();
@@ -197,6 +203,12 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
+
+if (isSeedOnly)
+{
+    await RestoCore.Infrastructure.Persistence.Seed.DatabaseSeeder.SeedAsync(app.Services);
+    return;
+}
 
 // Configure HTTP request pipeline
 app.UseExceptionHandler();
