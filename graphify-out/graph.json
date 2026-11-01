@@ -1500,7 +1500,7 @@
       },
       "norm_label": "program",
       "source_file": "src/RestoCore.Api/Program.cs",
-      "source_location": "L314"
+      "source_location": "L324"
     },
     {
       "id": "tests_restocore_integrationtests_endpoints_swaggerendpointtests_restocore_integrationtests_endpoints_swaggerendpointtests",
@@ -64977,7 +64977,7 @@
       "confidence": "EXTRACTED",
       "confidence_score": 1.0,
       "source_file": "src/RestoCore.Api/Program.cs",
-      "source_location": "L314",
+      "source_location": "L324",
       "weight": 1.0
     },
     {
@@ -82106,5 +82106,5 @@
       "source_file": "AGENTS.md"
     }
   ],
-  "built_at_commit": "de0107b4cf889084b67f89a3c985f691c5348a24"
+  "built_at_commit": "5558ea35c2b6f42403e9d4ac9d97af21d6c280f8"
 }

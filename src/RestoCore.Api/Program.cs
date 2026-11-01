@@ -48,6 +48,27 @@ foreach (var envPath in envCandidates)
 
 var builder = WebApplication.CreateBuilder(args);
 
+if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
+{
+    var seedServices = new ServiceCollection();
+    seedServices.AddLogging(logging => logging.AddConsole());
+    seedServices.AddScoped<ITenantContext, TenantContext>();
+    seedServices.AddSingleton<IPasswordHasher, RestoCore.Infrastructure.Identity.PasswordHasher>();
+    seedServices.AddDbContext<ApplicationDbContext>(options =>
+    {
+        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+        options.UseNpgsql(connectionString, npgsqlOptions =>
+        {
+            npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
+            npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+        });
+    });
+
+    await using var seedProvider = seedServices.BuildServiceProvider();
+    await RestoCore.Infrastructure.Persistence.Seed.DatabaseSeeder.SeedAsync(seedProvider);
+    return;
+}
+
 // Add services to container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -141,7 +162,6 @@ builder.Services.AddSingleton<ICdnPurgeService, LocalDevelopmentCdnPurgeService>
 builder.Services.AddScoped<RestoCore.Application.Features.MenuLayout.Services.IMenuCompilationService, RestoCore.Infrastructure.Services.Compilation.MenuCompilationService>();
 
 // Caching (Redis)
-var isSeedOnly = args.Contains("--seed", StringComparer.OrdinalIgnoreCase);
 var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
 builder.Services.AddStackExchangeRedisCache(options =>
 {
@@ -168,21 +188,17 @@ builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IOrderRepository, RestoCore.Infrastructure.Persistence.Repositories.OrderRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IUserRepository, RestoCore.Infrastructure.Persistence.Repositories.UserRepository>();
 
-if (!isSeedOnly)
-{
-    // Redis Streams & Order Queue
-    var redisMuxer = StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig);
-    builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(redisMuxer);
-    builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messaging.RedisOrderQueueService>();
+// Redis Streams & Order Queue (registered via factory for lazy initialization)
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(_ => StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig));
+builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messaging.RedisOrderQueueService>();
 
-    // WebSockets & Notifications
-    builder.Services.AddSingleton<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
-    builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>());
+// WebSockets & Notifications
+builder.Services.AddSingleton<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
+builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>());
 
-    // Background Workers
-    builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
-    builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
-}
+// Background Workers
+builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
+builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
 
 // Authorization & OPA
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();
@@ -203,12 +219,6 @@ builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 var app = builder.Build();
-
-if (isSeedOnly)
-{
-    await RestoCore.Infrastructure.Persistence.Seed.DatabaseSeeder.SeedAsync(app.Services);
-    return;
-}
 
 // Configure HTTP request pipeline
 app.UseExceptionHandler();
