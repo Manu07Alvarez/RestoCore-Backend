@@ -48,27 +48,6 @@ foreach (var envPath in envCandidates)
 
 var builder = WebApplication.CreateBuilder(args);
 
-if (args.Contains("--seed", StringComparer.OrdinalIgnoreCase))
-{
-    var seedServices = new ServiceCollection();
-    seedServices.AddLogging(logging => logging.AddConsole());
-    seedServices.AddScoped<ITenantContext, TenantContext>();
-    seedServices.AddSingleton<IPasswordHasher, RestoCore.Infrastructure.Identity.PasswordHasher>();
-    seedServices.AddDbContext<ApplicationDbContext>(options =>
-    {
-        var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-        options.UseNpgsql(connectionString, npgsqlOptions =>
-        {
-            npgsqlOptions.MigrationsAssembly(typeof(ApplicationDbContext).Assembly.FullName);
-            npgsqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-        });
-    });
-
-    await using var seedProvider = seedServices.BuildServiceProvider();
-    await RestoCore.Infrastructure.Persistence.Seed.DatabaseSeeder.SeedAsync(seedProvider);
-    return;
-}
-
 // Add services to container
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -99,7 +78,7 @@ builder.Services.AddSwaggerGen(c =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
 
-// Strict CORS Configuration from .env or appsettings (Not overly permissive)
+// Strict CORS Configuration from .env or appsettings
 var allowedOriginsSetting = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
     ?? builder.Configuration["Cors:AllowedOrigins"]
     ?? builder.Configuration["CORS_ALLOWED_ORIGINS"]
@@ -122,7 +101,9 @@ builder.Services.AddCors(options =>
 });
 
 // Authentication & Authorization
-var jwtKey = builder.Configuration["Jwt:Key"] ?? "RestoCoreSuperSecretDevelopmentKey2026!#*";
+var jwtKey = Environment.GetEnvironmentVariable("JWT_KEY")
+    ?? builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("JWT signing key is not configured.");
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "RestoCore";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "RestoCore";
 var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
@@ -158,7 +139,7 @@ builder.Services.AddScoped<ITenantContext, TenantContext>();
 builder.Services.AddSingleton<IPasswordHasher, RestoCore.Infrastructure.Identity.PasswordHasher>();
 builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
-builder.Services.AddSingleton<ICdnPurgeService, LocalDevelopmentCdnPurgeService>();
+builder.Services.AddSingleton<ICdnPurgeService, CdnPurgeService>();
 builder.Services.AddScoped<RestoCore.Application.Features.MenuLayout.Services.IMenuCompilationService, RestoCore.Infrastructure.Services.Compilation.MenuCompilationService>();
 
 // Caching (Redis)
@@ -224,16 +205,10 @@ var app = builder.Build();
 app.UseExceptionHandler();
 app.UseCors();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
 
-// Structured Execution Logging Middleware (correlates with Aspire Dashboard & OpenTelemetry traces)
+// Structured Execution Logging Middleware (correlates with OpenTelemetry traces)
 app.Use(async (context, next) =>
 {
     var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
@@ -319,6 +294,3 @@ app.MapStorageEndpoints();
 app.MapOrderEndpoints();
 
 app.Run();
-
-// Required for WebApplicationFactory in integration tests
-public partial class Program { }

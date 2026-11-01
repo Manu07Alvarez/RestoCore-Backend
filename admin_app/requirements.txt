@@ -1,5 +1,0 @@
-streamlit
-psycopg2-binary
-redis
-boto3
-pandas

@@ -9,11 +9,11 @@ using Microsoft.Extensions.Logging;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Infrastructure.Telemetry;
 
-public class LocalDevelopmentCdnPurgeService : ICdnPurgeService
+public class CdnPurgeService : ICdnPurgeService
 {
-    private readonly ILogger<LocalDevelopmentCdnPurgeService> _logger;
+    private readonly ILogger<CdnPurgeService> _logger;
 
-    public LocalDevelopmentCdnPurgeService(ILogger<LocalDevelopmentCdnPurgeService> logger)
+    public CdnPurgeService(ILogger<CdnPurgeService> logger)
     {
         _logger = logger;
     }

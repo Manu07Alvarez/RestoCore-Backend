@@ -5,9 +5,4 @@
     <Project Path="src/RestoCore.Domain/RestoCore.Domain.csproj" />
     <Project Path="src/RestoCore.Infrastructure/RestoCore.Infrastructure.csproj" />
   </Folder>
-  <Folder Name="/tests/">
-    <Project Path="tests/RestoCore.IntegrationTests/RestoCore.IntegrationTests.csproj" />
-    <Project Path="tests/RestoCore.SecurityTests/RestoCore.SecurityTests.csproj" />
-    <Project Path="tests/RestoCore.UnitTests/RestoCore.UnitTests.csproj" />
-  </Folder>
 </Solution>
