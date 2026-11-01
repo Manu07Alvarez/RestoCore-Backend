@@ -174,9 +174,9 @@
     "semantic_hash": "492a1bb0be34660218c0d68a93c87cb1"
   },
   "src/RestoCore.Api/Program.cs": {
-    "mtime": 1793059819.1663787,
-    "seen": 1793059861.8570323,
-    "ast_hash": "e522c77a18ad152f17353c2cceb1aa16",
+    "mtime": 1793569806.2173853,
+    "seen": 1793569879.4648197,
+    "ast_hash": "553bbc248267aadbcc5bb808f1a7fe14",
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Properties/launchSettings.json": {
@@ -1692,9 +1692,9 @@
     "semantic_hash": ""
   },
   "specs/010-database-user-auth-and-seeding/tasks.md": {
-    "mtime": 1793059614.199005,
-    "seen": 1793059861.8574343,
-    "ast_hash": "76d45bbeaac204e8b04b17afa8cd0e57",
+    "mtime": 1793059873.9087265,
+    "seen": 1793569879.465322,
+    "ast_hash": "3619864276053244d7df6a6710a1aa04",
     "semantic_hash": ""
   }
 }
