@@ -51,6 +51,27 @@ public class CatalogRepository : ICatalogRepository
         _context.Categories.Remove(category);
     }
 
+    public async Task<List<MenuItem>> GetMenuItemsByTenantAsync(
+        Guid tenantId,
+        Guid? categoryId = null,
+        bool includeDeleted = false,
+        CancellationToken cancellationToken = default)
+    {
+        var query = includeDeleted
+            ? _context.MenuItems.IgnoreQueryFilters().Where(m => m.TenantId == tenantId)
+            : _context.MenuItems.Where(m => m.TenantId == tenantId);
+
+        if (categoryId.HasValue)
+        {
+            query = query.Where(m => m.CategoryId == categoryId.Value);
+        }
+
+        return await query
+            .OrderBy(m => m.DisplayOrder)
+            .ThenBy(m => m.Name)
+            .ToListAsync(cancellationToken);
+    }
+
     public async Task<MenuItem?> GetMenuItemByIdAsync(Guid id, CancellationToken cancellationToken = default)
     {
         return await _context.MenuItems
