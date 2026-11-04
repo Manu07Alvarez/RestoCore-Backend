@@ -11,6 +11,7 @@ public interface ICatalogRepository
     void AddCategory(Category category);
     void RemoveCategory(Category category);
 
+    Task<List<MenuItem>> GetMenuItemsByTenantAsync(Guid tenantId, Guid? categoryId = null, bool includeDeleted = false, CancellationToken cancellationToken = default);
     Task<MenuItem?> GetMenuItemByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<MenuItem?> GetMenuItemByIdWithDeletedAsync(Guid id, CancellationToken cancellationToken = default);
     Task<MenuItem?> GetMenuItemWithModifiersAsync(Guid id, CancellationToken cancellationToken = default);

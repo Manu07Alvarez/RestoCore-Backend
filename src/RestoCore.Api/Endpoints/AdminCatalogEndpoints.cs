@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using RestoCore.Application.Features.Categories.Commands;
 using RestoCore.Application.Features.Categories.Queries;
 using RestoCore.Application.Features.MenuItems.Commands;
+using RestoCore.Application.Features.MenuItems.Queries;
 using RestoCore.Application.Features.Tenants.Commands;
 
 public static class AdminCatalogEndpoints
@@ -89,6 +90,27 @@ public static class AdminCatalogEndpoints
         .Produces(StatusCodes.Status204NoContent)
         .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status409Conflict)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapGet("/items", async (Guid? categoryId, bool? includeDeleted, ISender sender) =>
+        {
+            var result = await sender.Send(new GetMenuItemsQuery(categoryId, includeDeleted ?? false));
+            return Results.Ok(result);
+        })
+        .WithName("GetAdminMenuItems")
+        .Produces<List<MenuItemResponse>>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapGet("/items/{id:guid}", async (Guid id, ISender sender) =>
+        {
+            var result = await sender.Send(new GetMenuItemByIdQuery(id));
+            return Results.Ok(result);
+        })
+        .WithName("GetAdminMenuItemById")
+        .Produces<MenuItemResponse>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status404NotFound)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden);
 
