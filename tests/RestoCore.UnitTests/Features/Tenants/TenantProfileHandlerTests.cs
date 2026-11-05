@@ -7,6 +7,7 @@ using RestoCore.Application.Common.Interfaces.Repositories;
 using RestoCore.Application.Features.Tenants.Commands;
 using RestoCore.Application.Features.Tenants.Queries;
 using RestoCore.Domain.Entities;
+using RestoCore.Domain.ValueObjects;
 using Xunit;
 
 public class TenantProfileHandlerTests
@@ -24,7 +25,7 @@ public class TenantProfileHandlerTests
     }
 
     [Fact]
-    public async Task GetTenantProfile_ShouldReturnCurrentTenantProfile()
+    public async Task GetTenantProfile_ShouldReturnCurrentTenantProfileWithBranding()
     {
         // Arrange
         var tenant = new Tenant
@@ -34,8 +35,13 @@ public class TenantProfileHandlerTests
             Slug = "don-pepe",
             PhoneNumber = "+54 11 4567-8901",
             Address = "Av. Corrientes 1234",
-            BusinessHours = "Lunes a Domingo 12:00 a 00:00"
+            BusinessHours = "Lunes a Domingo 12:00 a 00:00",
+            BrandingConfig = new BrandingConfig
+            {
+                LogoUrl = "https://cdn.restocore.local/logos/don-pepe.webp"
+            }
         };
+        tenant.BrandingConfig.ApplyRgbColor("rgb(200, 40, 50)");
 
         _tenantRepoMock.Setup(r => r.GetTenantByIdAsync(_tenantId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(tenant);
@@ -52,6 +58,10 @@ public class TenantProfileHandlerTests
         result.PhoneNumber.Should().Be("+54 11 4567-8901");
         result.Address.Should().Be("Av. Corrientes 1234");
         result.BusinessHours.Should().Be("Lunes a Domingo 12:00 a 00:00");
+        result.PrimaryColorRgb.Should().Be("rgb(200, 40, 50)");
+        result.LogoUrl.Should().Be("https://cdn.restocore.local/logos/don-pepe.webp");
+        result.Branding.Should().NotBeNull();
+        result.Branding!.PrimaryColor.Should().Be("#C82832");
     }
 
     [Fact]
@@ -78,7 +88,9 @@ public class TenantProfileHandlerTests
             "Parrilla Don Pepe & Asador",
             "+54 11 5555-6666",
             "Av. Santa Fe 4321",
-            "Martes a Domingo 12:00 a 01:00");
+            "Martes a Domingo 12:00 a 01:00",
+            "rgb(25, 135, 84)",
+            "https://cdn.restocore.local/logos/don-pepe-new.webp");
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -88,13 +100,16 @@ public class TenantProfileHandlerTests
         result.PhoneNumber.Should().Be("+54 11 5555-6666");
         result.Address.Should().Be("Av. Santa Fe 4321");
         result.BusinessHours.Should().Be("Martes a Domingo 12:00 a 01:00");
+        result.PrimaryColorRgb.Should().Be("rgb(25, 135, 84)");
+        result.LogoUrl.Should().Be("https://cdn.restocore.local/logos/don-pepe-new.webp");
+        result.Branding!.PrimaryColor.Should().Be("#198754");
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cdnPurgeMock.Verify(c => c.PurgeTenantCacheAsync("don-pepe", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task PatchTenantProfile_ShouldOnlyUpdateSuppliedFields()
+    public async Task PatchTenantProfile_ShouldOnlyUpdateSuppliedFieldsIncludingRgbAndLogo()
     {
         // Arrange
         var tenant = new Tenant
@@ -120,7 +135,9 @@ public class TenantProfileHandlerTests
             null,
             "+54 11 9999-8888",
             null,
-            null);
+            null,
+            "12, 110, 253",
+            "https://cdn.restocore.local/logos/logo-empresa.png");
 
         // Act
         var result = await handler.Handle(command, CancellationToken.None);
@@ -130,8 +147,60 @@ public class TenantProfileHandlerTests
         result.PhoneNumber.Should().Be("+54 11 9999-8888");
         result.Address.Should().Be("Av. Corrientes 1234");
         result.BusinessHours.Should().Be("Lunes a Domingo 12:00 a 00:00");
+        result.PrimaryColorRgb.Should().Be("rgb(12, 110, 253)");
+        result.LogoUrl.Should().Be("https://cdn.restocore.local/logos/logo-empresa.png");
+        result.Branding!.PrimaryColor.Should().Be("#0C6EFD");
 
         _unitOfWorkMock.Verify(u => u.CommitAsync(It.IsAny<CancellationToken>()), Times.Once);
         _cdnPurgeMock.Verify(c => c.PurgeTenantCacheAsync("don-pepe", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GetAndPatchBranding_ShouldModifyRgbColorAndCompanyLogo()
+    {
+        // Arrange
+        var tenant = new Tenant
+        {
+            Id = _tenantId,
+            Name = "Parrilla Don Pepe",
+            Slug = "don-pepe"
+        };
+
+        _tenantRepoMock.Setup(r => r.GetTenantByIdAsync(_tenantId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(tenant);
+
+        var patchHandler = new PatchBrandingCommandHandler(
+            _tenantRepoMock.Object,
+            _unitOfWorkMock.Object,
+            _tenantContextMock.Object,
+            _cdnPurgeMock.Object);
+
+        var getHandler = new GetBrandingQueryHandler(_tenantRepoMock.Object, _tenantContextMock.Object);
+
+        // Act
+        await patchHandler.Handle(
+            new PatchBrandingCommand(
+                PrimaryColorRgb: "rgb(255, 87, 51)",
+                LogoUrl: "https://cdn.restocore.local/logos/brand-logo.webp"),
+            CancellationToken.None);
+
+        var branding = await getHandler.Handle(new GetBrandingQuery(), CancellationToken.None);
+
+        // Assert
+        branding.PrimaryColorRgb.Should().Be("rgb(255, 87, 51)");
+        branding.PrimaryColor.Should().Be("#FF5733");
+        branding.LogoUrl.Should().Be("https://cdn.restocore.local/logos/brand-logo.webp");
+        _cdnPurgeMock.Verify(c => c.PurgeTenantCacheAsync("don-pepe", It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData("rgb(300, 10, 10)")]
+    [InlineData("invalid-color")]
+    [InlineData("")]
+    public void BrandingConfig_ApplyRgbColor_ShouldThrowOnInvalidColor(string invalidColor)
+    {
+        var config = new BrandingConfig();
+        var act = () => config.ApplyRgbColor(invalidColor);
+        act.Should().Throw<ArgumentException>();
     }
 }

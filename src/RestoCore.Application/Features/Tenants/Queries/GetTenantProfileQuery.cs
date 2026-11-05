@@ -33,7 +33,10 @@ public class GetTenantProfileQueryHandler : IRequestHandler<GetTenantProfileQuer
             tenant.Slug,
             tenant.PhoneNumber,
             tenant.Address,
-            tenant.BusinessHours
+            tenant.BusinessHours,
+            tenant.BrandingConfig.PrimaryColorRgb,
+            tenant.BrandingConfig.LogoUrl,
+            tenant.BrandingConfig
         );
     }
 }
