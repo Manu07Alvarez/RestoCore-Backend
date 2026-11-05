@@ -13,6 +13,10 @@ public interface IApplicationDbContext
     DbSet<Table> Tables { get; }
     DbSet<MenuPublishJob> MenuPublishJobs { get; }
     DbSet<User> Users { get; }
+    DbSet<DailyMenuTrafficSummary> DailyMenuTrafficSummaries { get; }
+    DbSet<DailyItemViewSummary> DailyItemViewSummaries { get; }
+    DbSet<DailyCategoryInteractionSummary> DailyCategoryInteractionSummaries { get; }
+    DbSet<HourlyMenuTrafficSummary> HourlyMenuTrafficSummaries { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

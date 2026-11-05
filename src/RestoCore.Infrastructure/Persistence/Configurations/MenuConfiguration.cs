@@ -26,6 +26,7 @@ public class MenuConfiguration : IEntityTypeConfiguration<Category>, IEntityType
 
         builder.Property(m => m.Name).HasMaxLength(100).IsRequired();
         builder.Property(m => m.BasePrice).HasPrecision(10, 2).IsRequired();
+        builder.Property(m => m.EstimatedCost).HasPrecision(10, 2).IsRequired(false);
         builder.Property(m => m.ImageUrl).HasMaxLength(300);
         builder.Property(m => m.IsDeleted).HasDefaultValue(false);
         builder.Property(m => m.DeletedAt).IsRequired(false);

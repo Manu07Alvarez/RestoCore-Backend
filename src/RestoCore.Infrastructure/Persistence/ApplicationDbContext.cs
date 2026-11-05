@@ -35,6 +35,10 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<MenuPublishJob> MenuPublishJobs => Set<MenuPublishJob>();
     public DbSet<Order> Orders => Set<Order>();
     public DbSet<User> Users => Set<User>();
+    public DbSet<DailyMenuTrafficSummary> DailyMenuTrafficSummaries => Set<DailyMenuTrafficSummary>();
+    public DbSet<DailyItemViewSummary> DailyItemViewSummaries => Set<DailyItemViewSummary>();
+    public DbSet<DailyCategoryInteractionSummary> DailyCategoryInteractionSummaries => Set<DailyCategoryInteractionSummary>();
+    public DbSet<HourlyMenuTrafficSummary> HourlyMenuTrafficSummaries => Set<HourlyMenuTrafficSummary>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
