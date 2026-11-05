@@ -9,6 +9,7 @@ public class MenuItem : BaseEntity, ITenantScopedEntity
     public string Name { get; set; } = string.Empty;
     public string? Description { get; set; }
     public decimal BasePrice { get; set; }
+    public decimal? EstimatedCost { get; set; }
     public bool IsAvailable { get; set; } = true;
     public string? ImageUrl { get; set; }
     public int DisplayOrder { get; set; }

@@ -187,6 +187,8 @@ builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.ITenantRepository, RestoCore.Infrastructure.Persistence.Repositories.TenantRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IOrderRepository, RestoCore.Infrastructure.Persistence.Repositories.OrderRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IUserRepository, RestoCore.Infrastructure.Persistence.Repositories.UserRepository>();
+builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IAnalyticsRepository, RestoCore.Infrastructure.Persistence.Repositories.AnalyticsRepository>();
+builder.Services.AddSingleton<IAnalyticsEventQueue, RestoCore.Infrastructure.Messaging.AnalyticsEventQueue>();
 
 // Redis Streams & Order Queue (registered via factory for lazy initialization)
 builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(_ => StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig));
@@ -199,6 +201,7 @@ builder.Services.AddSingleton<IKitchenNotifier>(sp => sp.GetRequiredService<Rest
 // Background Workers
 builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.OrderProcessorWorker>();
 builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
+builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.AnalyticsAggregationWorker>();
 
 // Authorization & OPA
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();
@@ -207,6 +210,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PublicRead", policy => policy.RequireAssertion(_ => true));
     options.AddPolicy("TenantAdminOnly", policy => policy.Requirements.Add(new OpaRequirement("manage_menu")));
+    options.AddPolicy("AnalyticsReadOnly", policy => policy.Requirements.Add(new OpaRequirement("read_metrics")));
     options.AddPolicy("KitchenOnly", policy => policy.Requirements.Add(new OpaRequirement("kitchen_stock")));
     options.AddPolicy("SuperAdminOnly", policy => policy.Requirements.Add(new OpaRequirement("manage_tenants")));
 });
@@ -317,6 +321,7 @@ app.MapAdminTenantEndpoints();
 app.MapAdminTableEndpoints();
 app.MapStorageEndpoints();
 app.MapOrderEndpoints();
+app.MapAnalyticsEndpoints();
 
 app.Run();
 

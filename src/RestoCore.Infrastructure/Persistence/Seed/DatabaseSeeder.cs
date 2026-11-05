@@ -28,6 +28,8 @@ public static class DatabaseSeeder
             ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "PhoneNumber" character varying(50);
             ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "Address" character varying(255);
             ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "BusinessHours" character varying(255);
+            ALTER TABLE tenants ADD COLUMN IF NOT EXISTS "PlanTier" character varying(30) NOT NULL DEFAULT 'Standard';
+            ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS "EstimatedCost" numeric(10,2);
             ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS "IsDeleted" boolean NOT NULL DEFAULT false;
             ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS "DeletedAt" timestamp with time zone;
 
@@ -46,6 +48,62 @@ public static class DatabaseSeeder
                 CONSTRAINT "FK_users_tenants_TenantId" FOREIGN KEY ("TenantId") REFERENCES tenants ("Id") ON DELETE CASCADE
             );
             CREATE UNIQUE INDEX IF NOT EXISTS "IX_users_Email" ON users ("Email");
+
+            CREATE TABLE IF NOT EXISTS daily_menu_traffic_summaries (
+                "Id" uuid NOT NULL,
+                "TenantId" uuid NOT NULL,
+                "DateUtc" date NOT NULL,
+                "QrVisitsCount" integer NOT NULL DEFAULT 0,
+                "MobileCount" integer NOT NULL DEFAULT 0,
+                "DesktopCount" integer NOT NULL DEFAULT 0,
+                "TabletCount" integer NOT NULL DEFAULT 0,
+                "CreatedAt" timestamp with time zone NOT NULL,
+                "UpdatedAt" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_daily_menu_traffic_summaries" PRIMARY KEY ("Id"),
+                CONSTRAINT "FK_daily_menu_traffic_summaries_tenants_TenantId" FOREIGN KEY ("TenantId") REFERENCES tenants ("Id") ON DELETE CASCADE
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_daily_menu_traffic_summaries_TenantId_DateUtc" ON daily_menu_traffic_summaries ("TenantId", "DateUtc");
+
+            CREATE TABLE IF NOT EXISTS daily_item_view_summaries (
+                "Id" uuid NOT NULL,
+                "TenantId" uuid NOT NULL,
+                "ItemId" uuid NOT NULL,
+                "DateUtc" date NOT NULL,
+                "ViewsCount" integer NOT NULL DEFAULT 0,
+                "CreatedAt" timestamp with time zone NOT NULL,
+                "UpdatedAt" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_daily_item_view_summaries" PRIMARY KEY ("Id"),
+                CONSTRAINT "FK_daily_item_view_summaries_tenants_TenantId" FOREIGN KEY ("TenantId") REFERENCES tenants ("Id") ON DELETE CASCADE,
+                CONSTRAINT "FK_daily_item_view_summaries_menu_items_ItemId" FOREIGN KEY ("ItemId") REFERENCES menu_items ("Id") ON DELETE CASCADE
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_daily_item_view_summaries_TenantId_ItemId_DateUtc" ON daily_item_view_summaries ("TenantId", "ItemId", "DateUtc");
+
+            CREATE TABLE IF NOT EXISTS daily_category_interaction_summaries (
+                "Id" uuid NOT NULL,
+                "TenantId" uuid NOT NULL,
+                "CategoryId" uuid NOT NULL,
+                "DateUtc" date NOT NULL,
+                "InteractionsCount" integer NOT NULL DEFAULT 0,
+                "CreatedAt" timestamp with time zone NOT NULL,
+                "UpdatedAt" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_daily_category_interaction_summaries" PRIMARY KEY ("Id"),
+                CONSTRAINT "FK_daily_category_interaction_summaries_tenants_TenantId" FOREIGN KEY ("TenantId") REFERENCES tenants ("Id") ON DELETE CASCADE,
+                CONSTRAINT "FK_daily_category_interaction_summaries_categories_CategoryId" FOREIGN KEY ("CategoryId") REFERENCES categories ("Id") ON DELETE CASCADE
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_daily_category_interaction_summaries_TenantId_CategoryId_DateUtc" ON daily_category_interaction_summaries ("TenantId", "CategoryId", "DateUtc");
+
+            CREATE TABLE IF NOT EXISTS hourly_menu_traffic_summaries (
+                "Id" uuid NOT NULL,
+                "TenantId" uuid NOT NULL,
+                "DateUtc" date NOT NULL,
+                "HourOfDay" integer NOT NULL,
+                "VisitsCount" integer NOT NULL DEFAULT 0,
+                "CreatedAt" timestamp with time zone NOT NULL,
+                "UpdatedAt" timestamp with time zone NOT NULL,
+                CONSTRAINT "PK_hourly_menu_traffic_summaries" PRIMARY KEY ("Id"),
+                CONSTRAINT "FK_hourly_menu_traffic_summaries_tenants_TenantId" FOREIGN KEY ("TenantId") REFERENCES tenants ("Id") ON DELETE CASCADE
+            );
+            CREATE UNIQUE INDEX IF NOT EXISTS "IX_hourly_menu_traffic_summaries_TenantId_DateUtc_HourOfDay" ON hourly_menu_traffic_summaries ("TenantId", "DateUtc", "HourOfDay");
             """;
 
         await context.Database.ExecuteSqlRawAsync(ensureSchemaSql, cancellationToken);
@@ -63,6 +121,7 @@ public static class DatabaseSeeder
                 Name = "El Gato Negro",
                 Slug = DefaultTenantSlug,
                 Status = "Active",
+                PlanTier = "Pro",
                 PhoneNumber = "+54 11 4567-8901",
                 Address = "Av. Corrientes 1669, CABA",
                 BusinessHours = "Lunes a Domingo de 08:00 a 00:00 hs",
@@ -79,6 +138,11 @@ public static class DatabaseSeeder
             context.Tenants.Add(tenant);
             await context.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Seeded tenant '{TenantName}' ({TenantId}).", tenant.Name, tenant.Id);
+        }
+        else if (tenant.PlanTier != "Pro")
+        {
+            tenant.PlanTier = "Pro";
+            await context.SaveChangesAsync(cancellationToken);
         }
 
         // 2. Seed Users (with PBKDF2-HMAC-SHA256 hashed passwords)
@@ -191,6 +255,7 @@ public static class DatabaseSeeder
                     Name = "Empanadas Salteñas Cortadas a Cuchillo",
                     Description = "Dúo de empanadas horneadas al barro con salsa yasgua.",
                     BasePrice = 4500.00m,
+                    EstimatedCost = 1200.00m,
                     DisplayOrder = 1,
                     IsAvailable = true,
                     Allergens = new[] { "gluten" },
@@ -203,6 +268,7 @@ public static class DatabaseSeeder
                     Name = "Provoleta Ahumada con Tomates Confitados",
                     Description = "Queso provolone estacionado a la chapa con rúcula fresca y reducción de aceto.",
                     BasePrice = 8900.00m,
+                    EstimatedCost = 2500.00m,
                     DisplayOrder = 2,
                     IsAvailable = true,
                     Allergens = new[] { "dairy" },
@@ -215,6 +281,7 @@ public static class DatabaseSeeder
                     Name = "Ojo de Bife Madurado 400g",
                     Description = "Corte Angus certificado con papas rústicas al romero y manteca de hierbas.",
                     BasePrice = 22500.00m,
+                    EstimatedCost = 7500.00m,
                     DisplayOrder = 1,
                     IsAvailable = true,
                     Allergens = new[] { "dairy" },
@@ -243,6 +310,7 @@ public static class DatabaseSeeder
                     Name = "Sorrentinos de Calabaza Asada y Parmesano",
                     Description = "Pasta fresca artesanal con salsa suave de salvia y nueces tostadas.",
                     BasePrice = 14800.00m,
+                    EstimatedCost = 4200.00m,
                     DisplayOrder = 2,
                     IsAvailable = true,
                     Allergens = new[] { "gluten", "dairy", "nuts", "eggs" },
@@ -255,6 +323,7 @@ public static class DatabaseSeeder
                     Name = "Flan Casero Mixto de Campo",
                     Description = "Acompañado con dulce de leche repostero y crema chantilly.",
                     BasePrice = 6200.00m,
+                    EstimatedCost = 1800.00m,
                     DisplayOrder = 1,
                     IsAvailable = true,
                     Allergens = new[] { "dairy", "eggs" },
@@ -286,6 +355,35 @@ public static class DatabaseSeeder
             }
         }
         await context.SaveChangesAsync(cancellationToken);
+
+        // 5. Seed Baseline Analytics Traffic Summary
+        var todayUtc = DateOnly.FromDateTime(DateTime.UtcNow);
+        var hasTraffic = await context.DailyMenuTrafficSummaries
+            .IgnoreQueryFilters()
+            .AnyAsync(x => x.TenantId == tenant.Id && x.DateUtc == todayUtc, cancellationToken);
+
+        if (!hasTraffic)
+        {
+            context.DailyMenuTrafficSummaries.Add(new DailyMenuTrafficSummary
+            {
+                TenantId = tenant.Id,
+                DateUtc = todayUtc,
+                QrVisitsCount = 120,
+                MobileCount = 105,
+                DesktopCount = 10,
+                TabletCount = 5
+            });
+
+            context.HourlyMenuTrafficSummaries.Add(new HourlyMenuTrafficSummary
+            {
+                TenantId = tenant.Id,
+                DateUtc = todayUtc,
+                HourOfDay = 21,
+                VisitsCount = 45
+            });
+
+            await context.SaveChangesAsync(cancellationToken);
+        }
 
         logger.LogInformation("Database seeding completed successfully.");
     }

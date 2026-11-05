@@ -11,6 +11,12 @@ allow if {
     input.path = ["api", "v1", "tenants", _, "menu"]
 }
 
+# Public Analytics Event Collection
+allow if {
+    input.method == "POST"
+    input.path = ["api", "v1", "analytics", "collect"]
+}
+
 # Super Admin Global Access
 allow if {
     "super_admin" in input.user.roles
@@ -28,12 +34,15 @@ allow if {
         "publish_menu",
         "manage_categories",
         "manage_dishes",
+        "archive_dish",
+        "restore_dish",
         "manage_prices",
         "manage_branding",
         "manage_tables",
         "generate_presigned_url",
         "read_metrics",
         "manage_staff",
+        "manage_roles",
         "read_orders",
         "manage_orders"
     ]
