@@ -18,6 +18,7 @@ public class PublicMenuResponse
 public class PublicBrandingDto
 {
     public string PrimaryColor { get; set; } = "#E63946";
+    public string PrimaryColorRgb { get; set; } = "rgb(230, 57, 70)";
     public string SecondaryColor { get; set; } = "#1D3557";
     public string BackgroundColor { get; set; } = "#F8F9FA";
     public string TextColor { get; set; } = "#2B2D42";

@@ -75,6 +75,7 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
             Branding = new PublicBrandingDto
             {
                 PrimaryColor = tenant.BrandingConfig.PrimaryColor,
+                PrimaryColorRgb = tenant.BrandingConfig.PrimaryColorRgb,
                 SecondaryColor = tenant.BrandingConfig.SecondaryColor,
                 BackgroundColor = tenant.BrandingConfig.BackgroundColor,
                 TextColor = tenant.BrandingConfig.TextColor,

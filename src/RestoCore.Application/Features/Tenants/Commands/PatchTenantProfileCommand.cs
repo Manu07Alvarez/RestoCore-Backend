@@ -10,7 +10,9 @@ public record PatchTenantProfileCommand(
     string? Name,
     [property: JsonPropertyName("phone_number")] string? PhoneNumber,
     string? Address,
-    [property: JsonPropertyName("business_hours")] string? BusinessHours
+    [property: JsonPropertyName("business_hours")] string? BusinessHours,
+    [property: JsonPropertyName("primary_color_rgb")] string? PrimaryColorRgb = null,
+    [property: JsonPropertyName("logo_url")] string? LogoUrl = null
 ) : IRequest<TenantProfileResponse>;
 
 public class PatchTenantProfileCommandHandler : IRequestHandler<PatchTenantProfileCommand, TenantProfileResponse>
@@ -63,6 +65,18 @@ public class PatchTenantProfileCommandHandler : IRequestHandler<PatchTenantProfi
             tenant.BusinessHours = request.BusinessHours.Trim();
         }
 
+        if (request.PrimaryColorRgb != null)
+        {
+            tenant.BrandingConfig.ApplyRgbColor(request.PrimaryColorRgb);
+        }
+
+        if (request.LogoUrl != null)
+        {
+            tenant.BrandingConfig.LogoUrl = string.IsNullOrWhiteSpace(request.LogoUrl)
+                ? null
+                : request.LogoUrl.Trim();
+        }
+
         await _unitOfWork.CommitAsync(cancellationToken);
 
         if (_cdnPurgeService != null && !string.IsNullOrWhiteSpace(tenant.Slug))
@@ -76,7 +90,10 @@ public class PatchTenantProfileCommandHandler : IRequestHandler<PatchTenantProfi
             tenant.Slug,
             tenant.PhoneNumber,
             tenant.Address,
-            tenant.BusinessHours
+            tenant.BusinessHours,
+            tenant.BrandingConfig.PrimaryColorRgb,
+            tenant.BrandingConfig.LogoUrl,
+            tenant.BrandingConfig
         );
     }
 }

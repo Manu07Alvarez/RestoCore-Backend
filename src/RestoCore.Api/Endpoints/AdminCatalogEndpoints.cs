@@ -7,6 +7,8 @@ using RestoCore.Application.Features.Categories.Queries;
 using RestoCore.Application.Features.MenuItems.Commands;
 using RestoCore.Application.Features.MenuItems.Queries;
 using RestoCore.Application.Features.Tenants.Commands;
+using RestoCore.Application.Features.Tenants.Queries;
+using RestoCore.Domain.ValueObjects;
 
 public static class AdminCatalogEndpoints
 {
@@ -205,13 +207,49 @@ public static class AdminCatalogEndpoints
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden);
 
-        group.MapPut("/branding", async (UpdateBrandingCommand command, ISender sender) =>
+        group.MapGet("/branding", async (ISender sender) =>
         {
-            var result = await sender.Send(command);
+            var result = await sender.Send(new GetBrandingQuery());
             return Results.Ok(result);
         })
+        .WithName("GetBranding")
+        .Produces<BrandingConfig>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPut("/branding", async (UpdateBrandingCommand command, ISender sender) =>
+        {
+            try
+            {
+                var result = await sender.Send(command);
+                return Results.Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { detail = ex.Message });
+            }
+        })
         .WithName("UpdateBranding")
-        .Produces(StatusCodes.Status200OK)
+        .Produces<BrandingConfig>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
+        .Produces(StatusCodes.Status401Unauthorized)
+        .Produces(StatusCodes.Status403Forbidden);
+
+        group.MapPatch("/branding", async (PatchBrandingCommand command, ISender sender) =>
+        {
+            try
+            {
+                var result = await sender.Send(command);
+                return Results.Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { detail = ex.Message });
+            }
+        })
+        .WithName("PatchBranding")
+        .Produces<BrandingConfig>(StatusCodes.Status200OK)
+        .Produces(StatusCodes.Status400BadRequest)
         .Produces(StatusCodes.Status401Unauthorized)
         .Produces(StatusCodes.Status403Forbidden);
 

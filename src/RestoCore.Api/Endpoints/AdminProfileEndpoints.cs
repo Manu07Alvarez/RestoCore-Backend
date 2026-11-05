@@ -25,8 +25,15 @@ public static class AdminProfileEndpoints
 
         group.MapPut("/profile", async (UpdateTenantProfileCommand command, ISender sender) =>
         {
-            var result = await sender.Send(command);
-            return Results.Ok(result);
+            try
+            {
+                var result = await sender.Send(command);
+                return Results.Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { detail = ex.Message });
+            }
         })
         .WithName("UpdateTenantProfile")
         .Produces<TenantProfileResponse>(StatusCodes.Status200OK)
@@ -36,8 +43,15 @@ public static class AdminProfileEndpoints
 
         group.MapPatch("/profile", async (PatchTenantProfileCommand command, ISender sender) =>
         {
-            var result = await sender.Send(command);
-            return Results.Ok(result);
+            try
+            {
+                var result = await sender.Send(command);
+                return Results.Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return Results.BadRequest(new { detail = ex.Message });
+            }
         })
         .WithName("PatchTenantProfile")
         .Produces<TenantProfileResponse>(StatusCodes.Status200OK)
