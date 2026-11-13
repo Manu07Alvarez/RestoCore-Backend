@@ -36,5 +36,15 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
 
         builder.HasIndex(o => new { o.TenantId, o.CreatedAt });
         builder.HasIndex(o => o.Status);
+
+        // ADR-0014: GIN index on JSONB items_snapshot for fast @> containment queries
+        builder.HasIndex(o => o.ItemsSnapshot)
+            .HasMethod("gin")
+            .HasDatabaseName("ix_orders_items_snapshot_gin");
+
+        // ADR-0014: Partial B-Tree index for active kitchen orders per tenant
+        builder.HasIndex(o => o.TenantId)
+            .HasDatabaseName("ix_orders_active_tenant")
+            .HasFilter("status NOT IN ('delivered', 'cancelled')");
     }
 }

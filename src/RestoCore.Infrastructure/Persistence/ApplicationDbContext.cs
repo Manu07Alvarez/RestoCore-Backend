@@ -4,6 +4,7 @@ using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using RestoCore.Application.Common.Caching;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Domain.Common;
 using RestoCore.Domain.Entities;
@@ -12,18 +13,21 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 {
     private readonly ITenantContext _tenantContext;
     private readonly IDistributedCache? _cache;
+    private readonly IPublicMenuCacheService? _publicMenuCache;
     private readonly ILogger<ApplicationDbContext>? _logger;
 
     public ApplicationDbContext(
         DbContextOptions<ApplicationDbContext> options,
         ITenantContext tenantContext,
         IDistributedCache? cache = null,
-        ILogger<ApplicationDbContext>? logger = null)
+        ILogger<ApplicationDbContext>? logger = null,
+        IPublicMenuCacheService? publicMenuCache = null)
         : base(options)
     {
         _tenantContext = tenantContext;
         _cache = cache;
         _logger = logger;
+        _publicMenuCache = publicMenuCache;
     }
 
     public DbSet<Tenant> Tenants => Set<Tenant>();
@@ -53,7 +57,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
                 var parameter = Expression.Parameter(entityType.ClrType, "e");
                 var property = Expression.Property(parameter, nameof(ITenantScopedEntity.TenantId));
                 var tenantIdValue = Expression.Property(Expression.Constant(this), nameof(CurrentTenantId));
-                
+
                 // e.TenantId == CurrentTenantId
                 Expression comparison = Expression.Equal(property, tenantIdValue);
 
@@ -101,7 +105,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
         List<Guid>? modifiedTenantIds = null;
         HashSet<string>? slugsToInvalidate = null;
 
-        if (_cache != null)
+        if (_cache != null || _publicMenuCache != null)
         {
             slugsToInvalidate = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -129,11 +133,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
         var result = await base.SaveChangesAsync(cancellationToken);
 
-        if (_cache != null && slugsToInvalidate != null)
+        if ((_cache != null || _publicMenuCache != null) && slugsToInvalidate != null)
         {
-            // Post-commit cache invalidation is strictly best-effort:
-            // 1. Do not use the caller's cancellation token so cancellations after commit don't abort cleanup.
-            // 2. Any failure must not cause SaveChangesAsync to fail since data is already persisted.
             try
             {
                 if (modifiedTenantIds != null && modifiedTenantIds.Count > 0)
@@ -152,20 +153,26 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 
                 foreach (var slug in slugsToInvalidate)
                 {
-                    // Bump tenant-wide menu version: invalidates all table tokens and default menu caches
-                    var newVersion = Guid.NewGuid().ToString("N");
-                    await _cache.SetStringAsync(
-                        $"menu_version:{slug}",
-                        newVersion,
-                        new DistributedCacheEntryOptions
-                        {
-                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7)
-                        },
-                        CancellationToken.None);
+                    if (_publicMenuCache != null)
+                    {
+                        await _publicMenuCache.InvalidateTenantMenuAsync(slug, CancellationToken.None);
+                    }
 
-                    // Also proactively clean legacy default keys
-                    await _cache.RemoveAsync($"menu_payload:{slug}:default", CancellationToken.None);
-                    await _cache.RemoveAsync($"menu_etag:{slug}:default", CancellationToken.None);
+                    if (_cache != null)
+                    {
+                        var newVersion = Guid.NewGuid().ToString("N");
+                        await _cache.SetStringAsync(
+                            $"menu_version:{slug}",
+                            newVersion,
+                            new DistributedCacheEntryOptions
+                            {
+                                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7)
+                            },
+                            CancellationToken.None);
+
+                        await _cache.RemoveAsync($"menu_payload:{slug}:default", CancellationToken.None);
+                        await _cache.RemoveAsync($"menu_etag:{slug}:default", CancellationToken.None);
+                    }
                 }
             }
             catch (Exception ex)

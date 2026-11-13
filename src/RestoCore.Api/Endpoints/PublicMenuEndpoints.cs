@@ -1,86 +1,53 @@
 namespace RestoCore.Api.Endpoints;
 
-using RestoCore.Application.Common.Mediator;
+using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.Caching.Distributed;
+using RestoCore.Application.Common.Caching;
+using RestoCore.Application.Common.Mediator;
 using RestoCore.Application.Features.PublicMenu.Queries;
 
 public static class PublicMenuEndpoints
 {
+    private static readonly JsonSerializerOptions WebJsonOptions = new(JsonSerializerDefaults.Web);
+
     public static void MapPublicMenuEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/v1/tenants/{tenant_slug}/menu")
                        .WithTags("Public Menu");
 
-        group.MapGet("/", async (string tenant_slug, string? table_token, IMediator mediator, Microsoft.Extensions.Caching.Distributed.IDistributedCache cache, HttpContext context, CancellationToken ct) =>
+        group.MapGet("/", async (
+            string tenant_slug,
+            string? table_token,
+            IMediator mediator,
+            IPublicMenuCacheService publicMenuCache,
+            HttpContext context,
+            CancellationToken ct) =>
         {
-            var versionCacheKey = $"menu_version:{tenant_slug}";
-            string version = "1";
-            string? cachedEtag = null;
-            string? cachedPayload = null;
-
-            try
-            {
-                version = await cache.GetStringAsync(versionCacheKey, ct) ?? "1";
-                var etagCacheKey = $"menu_etag:{tenant_slug}:{version}:{table_token ?? "default"}";
-                var payloadCacheKey = $"menu_payload:{tenant_slug}:{version}:{table_token ?? "default"}";
-
-                cachedEtag = await cache.GetStringAsync(etagCacheKey, ct);
-                cachedPayload = await cache.GetStringAsync(payloadCacheKey, ct);
-            }
-            catch
-            {
-                // Resilient fallback: continue with dynamic mediator execution
-            }
-
-            if (!string.IsNullOrEmpty(cachedEtag) && !string.IsNullOrEmpty(cachedPayload))
-            {
-                if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) && MatchesEtag(ifNoneMatch, cachedEtag))
+            var entry = await publicMenuCache.GetOrCreateMenuAsync(
+                tenant_slug,
+                table_token,
+                async cancel =>
                 {
-                    context.Response.Headers.ETag = cachedEtag;
-                    context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
-                    return Results.StatusCode(StatusCodes.Status304NotModified);
-                }
+                    var (response, etag) = await mediator.Send(new GetPublicMenuQuery(tenant_slug, table_token), cancel);
+                    var jsonPayload = JsonSerializer.Serialize(response, WebJsonOptions);
+                    return new PublicMenuCacheEntry(etag, jsonPayload);
+                },
+                ct);
 
-                context.Response.Headers.ETag = cachedEtag;
-                context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
-                return Results.Content(cachedPayload, "application/json");
-            }
-
-            var (response, etag) = await mediator.Send(new GetPublicMenuQuery(tenant_slug, table_token), ct);
-            var jsonPayload = System.Text.Json.JsonSerializer.Serialize(response, new System.Text.Json.JsonSerializerOptions(System.Text.Json.JsonSerializerDefaults.Web));
-
-            try
+            if (context.Request.Headers.TryGetValue("If-None-Match", out var ifNoneMatch) &&
+                MatchesEtag(ifNoneMatch, entry.ETag))
             {
-                var etagCacheKey = $"menu_etag:{tenant_slug}:{version}:{table_token ?? "default"}";
-                var payloadCacheKey = $"menu_payload:{tenant_slug}:{version}:{table_token ?? "default"}";
-
-                // Cache computed ETag and serialized JSON payload in Redis with 60s TTL
-                var cacheOptions = new Microsoft.Extensions.Caching.Distributed.DistributedCacheEntryOptions
-                {
-                    AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(60)
-                };
-                await cache.SetStringAsync(etagCacheKey, etag, cacheOptions, ct);
-                await cache.SetStringAsync(payloadCacheKey, jsonPayload, cacheOptions, ct);
-            }
-            catch
-            {
-                // Non-blocking cache write failure
-            }
-
-            if (context.Request.Headers.TryGetValue("If-None-Match", out var incomingEtag) && MatchesEtag(incomingEtag, etag))
-            {
-                context.Response.Headers.ETag = etag;
-                context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
+                context.Response.Headers.ETag = entry.ETag;
+                context.Response.Headers.CacheControl = "public, max-age=60, s-maxage=3600";
                 return Results.StatusCode(StatusCodes.Status304NotModified);
             }
 
-            context.Response.Headers.ETag = etag;
-            context.Response.Headers.CacheControl = "public, max-age=3600, s-maxage=86400";
+            context.Response.Headers.ETag = entry.ETag;
+            context.Response.Headers.CacheControl = "public, max-age=60, s-maxage=3600";
 
-            return Results.Content(jsonPayload, "application/json");
+            return Results.Content(entry.PayloadJson, "application/json");
         })
         .AllowAnonymous()
         .WithName("GetPublicMenu")

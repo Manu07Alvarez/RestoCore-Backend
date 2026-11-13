@@ -19,7 +19,7 @@ public class UserRepository : IUserRepository
         return await _context.Users
             .IgnoreQueryFilters()
             .Include(u => u.Tenant)
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == normalizedEmail && u.IsActive, cancellationToken);
+            .FirstOrDefaultAsync(u => u.Email == normalizedEmail && u.IsActive, cancellationToken);
     }
 
     public async Task<bool> UserExistsByEmailAsync(string email, CancellationToken cancellationToken = default)
@@ -27,11 +27,12 @@ public class UserRepository : IUserRepository
         var normalizedEmail = email.Trim().ToLowerInvariant();
         return await _context.Users
             .IgnoreQueryFilters()
-            .AnyAsync(u => u.Email.ToLower() == normalizedEmail, cancellationToken);
+            .AnyAsync(u => u.Email == normalizedEmail, cancellationToken);
     }
 
     public void AddUser(User user)
     {
+        user.Email = user.Email.Trim().ToLowerInvariant();
         _context.Users.Add(user);
     }
 }

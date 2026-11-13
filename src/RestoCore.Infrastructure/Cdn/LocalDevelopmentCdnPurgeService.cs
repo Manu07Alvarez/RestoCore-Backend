@@ -6,19 +6,24 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using RestoCore.Application.Common.Caching;
 using RestoCore.Application.Common.Interfaces;
 using RestoCore.Infrastructure.Telemetry;
 
 public class LocalDevelopmentCdnPurgeService : ICdnPurgeService
 {
     private readonly ILogger<LocalDevelopmentCdnPurgeService> _logger;
+    private readonly IPublicMenuCacheService? _publicMenuCache;
 
-    public LocalDevelopmentCdnPurgeService(ILogger<LocalDevelopmentCdnPurgeService> logger)
+    public LocalDevelopmentCdnPurgeService(
+        ILogger<LocalDevelopmentCdnPurgeService> logger,
+        IPublicMenuCacheService? publicMenuCache = null)
     {
         _logger = logger;
+        _publicMenuCache = publicMenuCache;
     }
 
-    public Task<bool> PurgeTenantCacheAsync(string tenantSlug, CancellationToken cancellationToken = default)
+    public async Task<bool> PurgeTenantCacheAsync(string tenantSlug, CancellationToken cancellationToken = default)
     {
         using var activity = OpenTelemetryExtensions.ActivitySource.StartActivity("CdnPurge.Tenant");
         activity?.SetTag("tenant.slug", tenantSlug);
@@ -26,7 +31,11 @@ public class LocalDevelopmentCdnPurgeService : ICdnPurgeService
         try
         {
             _logger.LogInformation("CDN Cache Purge requested for tenant: {TenantSlug}", tenantSlug);
-            return Task.FromResult(true);
+            if (_publicMenuCache != null && !string.IsNullOrWhiteSpace(tenantSlug))
+            {
+                await _publicMenuCache.InvalidateTenantMenuAsync(tenantSlug, cancellationToken);
+            }
+            return true;
         }
         catch (Exception ex)
         {

@@ -1,11 +1,18 @@
 namespace RestoCore.Application.Common.Mediator;
 
+using System;
+using System.Collections.Concurrent;
+using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using RestoCore.Application.Common.Behaviors;
 
-public class Mediator : IMediator
+public sealed class Mediator : IMediator
 {
     private readonly IServiceProvider _serviceProvider;
+    private static readonly ConcurrentDictionary<Type, object> InvokerCache = new();
 
     public Mediator(IServiceProvider serviceProvider)
     {
@@ -14,48 +21,21 @@ public class Mediator : IMediator
 
     public async Task<TResponse> Send<TResponse>(IRequest<TResponse> request, CancellationToken cancellationToken = default)
     {
-        if (request == null)
-        {
-            throw new ArgumentNullException(nameof(request));
-        }
+        ArgumentNullException.ThrowIfNull(request);
 
         var requestType = request.GetType();
-
-        // Automatic FluentValidation Execution
-        var validatorType = typeof(FluentValidation.IValidator<>).MakeGenericType(requestType);
-        var validator = _serviceProvider.GetService(validatorType);
-        if (validator != null)
-        {
-            var validateMethod = validatorType.GetMethod("ValidateAsync", new[] { requestType, typeof(CancellationToken) });
-            if (validateMethod != null)
+        var invoker = (IRequestInvoker<TResponse>)InvokerCache.GetOrAdd(
+            requestType,
+            static type =>
             {
-                var valTask = (Task)validateMethod.Invoke(validator, new object[] { request, cancellationToken })!;
-                await valTask.ConfigureAwait(false);
-                var resultProp = valTask.GetType().GetProperty("Result");
-                var validationResult = resultProp?.GetValue(valTask) as FluentValidation.Results.ValidationResult;
-                if (validationResult != null && !validationResult.IsValid)
-                {
-                    throw new FluentValidation.ValidationException(validationResult.Errors);
-                }
-            }
-        }
+                var responseInterface = type.GetInterfaces()
+                    .First(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IRequest<>));
+                var responseType = responseInterface.GetGenericArguments()[0];
+                var invokerType = typeof(RequestInvoker<,>).MakeGenericType(type, responseType);
+                return Activator.CreateInstance(invokerType)!;
+            });
 
-        var handlerType = typeof(IRequestHandler<,>).MakeGenericType(requestType, typeof(TResponse));
-
-        var handler = _serviceProvider.GetService(handlerType);
-        if (handler == null)
-        {
-            throw new InvalidOperationException($"No handler registered for request type '{requestType.FullName}'.");
-        }
-
-        var method = handlerType.GetMethod("Handle", new[] { requestType, typeof(CancellationToken) });
-        if (method == null)
-        {
-            throw new InvalidOperationException($"Handle method not found on handler '{handlerType.FullName}'.");
-        }
-
-        var task = (Task<TResponse>)method.Invoke(handler, new object[] { request, cancellationToken })!;
-        return await task;
+        return await invoker.InvokeAsync(_serviceProvider, request, cancellationToken);
     }
 }
 
@@ -65,6 +45,7 @@ public static class MediatorServiceCollectionExtensions
     {
         services.AddScoped<IMediator, Mediator>();
         services.AddScoped<ISender>(sp => sp.GetRequiredService<IMediator>());
+        services.AddScoped(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
 
         var handlerInterfaceType = typeof(IRequestHandler<,>);
         var validatorInterfaceType = typeof(FluentValidation.IValidator<>);

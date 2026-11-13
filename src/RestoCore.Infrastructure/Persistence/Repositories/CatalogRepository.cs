@@ -30,8 +30,9 @@ public class CatalogRepository : ICatalogRepository
 
     public async Task<bool> CategoryExistsAsync(string name, CancellationToken cancellationToken = default)
     {
+        var trimmed = name.Trim();
         return await _context.Categories
-            .AnyAsync(c => c.Name.ToLower() == name.ToLower(), cancellationToken);
+            .AnyAsync(c => c.Name == trimmed, cancellationToken);
     }
 
     public async Task<bool> HasMenuItemsForCategoryAsync(Guid categoryId, CancellationToken cancellationToken = default)
@@ -101,6 +102,23 @@ public class CatalogRepository : ICatalogRepository
             .FirstOrDefaultAsync(m => m.Id == id, cancellationToken);
     }
 
+    public async Task<IReadOnlyList<MenuItem>> GetMenuItemsWithModifiersByIdsAsync(
+        IReadOnlyCollection<Guid> itemIds,
+        CancellationToken cancellationToken = default)
+    {
+        if (itemIds == null || itemIds.Count == 0)
+        {
+            return Array.Empty<MenuItem>();
+        }
+
+        return await _context.MenuItems
+            .AsNoTracking()
+            .Include(m => m.ModifierGroups)
+                .ThenInclude(g => g.Options)
+            .Where(m => itemIds.Contains(m.Id) && !m.IsDeleted)
+            .ToListAsync(cancellationToken);
+    }
+
     public void AddMenuItem(MenuItem menuItem)
     {
         _context.MenuItems.Add(menuItem);
@@ -134,7 +152,7 @@ public class CatalogRepository : ICatalogRepository
             .IgnoreQueryFilters()
             .AsNoTracking()
             .Include(t => t.Categories.Where(c => c.IsActive).OrderBy(c => c.DisplayOrder))
-                .ThenInclude(c => c.Items.OrderBy(m => m.DisplayOrder))
+                .ThenInclude(c => c.Items.Where(m => !m.IsDeleted).OrderBy(m => m.DisplayOrder))
                     .ThenInclude(m => m.ModifierGroups)
                         .ThenInclude(mg => mg.Options)
             .FirstOrDefaultAsync(t => t.Slug == tenantSlug && t.Status == "Active", cancellationToken);

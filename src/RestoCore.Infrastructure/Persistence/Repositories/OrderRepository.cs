@@ -34,7 +34,24 @@ public class OrderRepository : IOrderRepository
 
     public async Task<bool> HasActiveOrdersForMenuItemAsync(Guid tenantId, Guid menuItemId, CancellationToken ct = default)
     {
+        if (_context.Database.IsNpgsql())
+        {
+            // ADR-0014: Native PostgreSQL JSONB containment (@>) matching [JsonPropertyName("menuItemId")]
+            var filterPayload = $"[{{\"menuItemId\":\"{menuItemId}\"}}]";
+
+            return await _context.Orders
+                .FromSqlInterpolated($@"
+                    SELECT * FROM orders
+                    WHERE ""TenantId"" = {tenantId}
+                      AND ""Status"" NOT IN ('delivered', 'cancelled')
+                      AND ""ItemsSnapshot"" @> {filterPayload}::jsonb
+                    LIMIT 1")
+                .AnyAsync(ct);
+        }
+
+        // InMemory database fallback for unit testing
         var activeOrders = await _context.Orders
+            .AsNoTracking()
             .Where(o => o.TenantId == tenantId && o.Status != "delivered" && o.Status != "cancelled")
             .ToListAsync(ct);
 

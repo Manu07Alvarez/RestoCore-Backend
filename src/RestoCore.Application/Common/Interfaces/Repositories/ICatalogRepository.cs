@@ -15,6 +15,7 @@ public interface ICatalogRepository
     Task<MenuItem?> GetMenuItemByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<MenuItem?> GetMenuItemByIdWithDeletedAsync(Guid id, CancellationToken cancellationToken = default);
     Task<MenuItem?> GetMenuItemWithModifiersAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<MenuItem>> GetMenuItemsWithModifiersByIdsAsync(IReadOnlyCollection<Guid> itemIds, CancellationToken cancellationToken = default);
     Task<List<MenuItem>> GetArchivedMenuItemsOlderThanAsync(DateTimeOffset threshold, CancellationToken cancellationToken = default);
     void AddMenuItem(MenuItem menuItem);
     void RemoveMenuItem(MenuItem menuItem);
