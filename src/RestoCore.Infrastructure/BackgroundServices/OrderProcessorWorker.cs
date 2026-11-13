@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,8 @@ public class OrderProcessorWorker : BackgroundService
     private readonly ILogger<OrderProcessorWorker> _logger;
     private const string ConsumerGroup = "kitchen-workers";
     private const string ConsumerName = "worker-1";
+    private IReadOnlyCollection<string> _fallbackCachedSlugs = Array.Empty<string>();
+    private bool _initialFallbackHydrated;
 
     public OrderProcessorWorker(
         IServiceProvider serviceProvider,
@@ -37,15 +40,26 @@ public class OrderProcessorWorker : BackgroundService
             {
                 await using var scope = _serviceProvider.CreateAsyncScope();
                 var queueService = scope.ServiceProvider.GetRequiredService<IOrderQueueService>();
-                var tenantRepo = scope.ServiceProvider.GetRequiredService<ITenantRepository>();
                 var catalogRepo = scope.ServiceProvider.GetRequiredService<ICatalogRepository>();
                 var orderRepo = scope.ServiceProvider.GetRequiredService<IOrderRepository>();
                 var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
                 var notifier = scope.ServiceProvider.GetRequiredService<IKitchenNotifier>();
 
-                // Poll tenants or default streams
-                var db = scope.ServiceProvider.GetRequiredService<RestoCore.Infrastructure.Persistence.ApplicationDbContext>();
-                var activeTenants = db.Tenants.Select(t => t.Slug).ToList();
+                // ADR-0018 (OPT-05a): Discover active tenant streams from Redis Set instead of polling PostgreSQL every 500ms
+                var activeTenants = await queueService.GetActiveTenantStreamsAsync(stoppingToken);
+                if (activeTenants.Count == 0)
+                {
+                    if (!_initialFallbackHydrated)
+                    {
+                        var db = scope.ServiceProvider.GetRequiredService<RestoCore.Infrastructure.Persistence.ApplicationDbContext>();
+                        _fallbackCachedSlugs = await db.Tenants
+                            .AsNoTracking()
+                            .Select(t => t.Slug)
+                            .ToListAsync(stoppingToken);
+                        _initialFallbackHydrated = true;
+                    }
+                    activeTenants = _fallbackCachedSlugs;
+                }
 
                 bool hadWork = false;
 
@@ -78,7 +92,7 @@ public class OrderProcessorWorker : BackgroundService
         _logger.LogInformation("OrderProcessorWorker stopped.");
     }
 
-    private async Task ProcessOrderMessageAsync(
+    public async Task ProcessOrderMessageAsync(
         OrderStreamMessage msg,
         string tenantSlug,
         ICatalogRepository catalogRepo,
@@ -100,13 +114,26 @@ public class OrderProcessorWorker : BackgroundService
             return;
         }
 
+        // ADR-0018 (OPT-05b): Batch load all distinct menu items and modifiers in a single SQL query
+        var distinctItemIds = payload.Items
+            .Select(i => i.MenuItemId)
+            .Distinct()
+            .ToArray();
+
+        var loadedItems = await catalogRepo.GetMenuItemsWithModifiersByIdsAsync(distinctItemIds, ct);
+        var menuItemsById = loadedItems.ToDictionary(m => m.Id);
+
         decimal totalAmount = 0;
         var snapshots = new List<OrderItemSnapshot>();
 
         foreach (var itemInput in payload.Items)
         {
-            var menuItem = await catalogRepo.GetMenuItemWithModifiersAsync(itemInput.MenuItemId, ct);
-            if (menuItem == null) continue;
+            if (!menuItemsById.TryGetValue(itemInput.MenuItemId, out var menuItem))
+            {
+                // Fallback to individual lookup only if custom mock in unit test didn't set up batch method
+                menuItem = await catalogRepo.GetMenuItemWithModifiersAsync(itemInput.MenuItemId, ct);
+                if (menuItem == null) continue;
+            }
 
             decimal unitPrice = menuItem.BasePrice;
             var modifierSnapshots = new List<OrderModifierSnapshot>();

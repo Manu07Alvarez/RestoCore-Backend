@@ -1,8 +1,8 @@
 {
   ".specify/feature.json": {
-    "mtime": 1793831201.4879575,
-    "seen": 1793905058.2957537,
-    "ast_hash": "09919573f330e3c96939b745edaab2ab",
+    "mtime": 1794525712.305369,
+    "seen": 1794528177.9965212,
+    "ast_hash": "d8da8a28d5556927ed4eff945ab1d2e7",
     "semantic_hash": ""
   },
   ".specify/init-options.json": {
@@ -114,9 +114,9 @@
     "semantic_hash": "e2385e56f9a3bcb0f2d5c72b9d1a3b59"
   },
   "src/RestoCore.Api/Endpoints/AdminCatalogEndpoints.cs": {
-    "mtime": 1793904956.0283153,
-    "seen": 1793905058.2957847,
-    "ast_hash": "72cbf162ee1a20e8779d5a30e803785b",
+    "mtime": 1794011919.3041458,
+    "seen": 1794014907.1704552,
+    "ast_hash": "851f32475c1a8d8ac05ecb2bfd186299",
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/AdminMenuLayoutEndpoints.cs": {
@@ -144,10 +144,10 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/HealthEndpoints.cs": {
-    "mtime": 1793572091.6285057,
-    "seen": 1793905058.2957957,
-    "ast_hash": "0465f57600a0422e820826cac0b91f31",
-    "semantic_hash": "0465f57600a0422e820826cac0b91f31"
+    "mtime": 1794527405.3981981,
+    "seen": 1794528177.9965715,
+    "ast_hash": "255b8158ecab0e27994e402fb19c94c9",
+    "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/KitchenEndpoints.cs": {
     "mtime": 1793572091.6330242,
@@ -156,10 +156,10 @@
     "semantic_hash": "d5c941981fce359b4e878199bfa29937"
   },
   "src/RestoCore.Api/Endpoints/PublicMenuEndpoints.cs": {
-    "mtime": 1793572091.634023,
-    "seen": 1793905058.2958007,
-    "ast_hash": "bcf24b4843e29795e8fa2350a857ef5f",
-    "semantic_hash": "bcf24b4843e29795e8fa2350a857ef5f"
+    "mtime": 1794527251.6293871,
+    "seen": 1794528177.9965775,
+    "ast_hash": "acb7602f27b25319bbabd0e18de64bc1",
+    "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/StorageEndpoints.cs": {
     "mtime": 1793572091.634023,
@@ -168,15 +168,15 @@
     "semantic_hash": "73027b4e9d66d865564ebb7a6b03303f"
   },
   "src/RestoCore.Api/Middlewares/GlobalExceptionHandler.cs": {
-    "mtime": 1793572091.635023,
-    "seen": 1793905058.2958035,
-    "ast_hash": "492a1bb0be34660218c0d68a93c87cb1",
-    "semantic_hash": "492a1bb0be34660218c0d68a93c87cb1"
+    "mtime": 1794527520.5270314,
+    "seen": 1794528177.9965806,
+    "ast_hash": "a82e50925f559b7b7900a7f47ccd46e8",
+    "semantic_hash": ""
   },
   "src/RestoCore.Api/Program.cs": {
-    "mtime": 1793845052.5515292,
-    "seen": 1793905058.295805,
-    "ast_hash": "e1bcfd51b627138ef277e28cbf378486",
+    "mtime": 1794527563.3299193,
+    "seen": 1794528177.9965818,
+    "ast_hash": "7228972b26638c444088cec3f244d113",
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Properties/launchSettings.json": {
@@ -204,9 +204,9 @@
     "semantic_hash": "9a4f2cc1b3043544f0a1ce4cd6d0932f"
   },
   "src/RestoCore.Application/Common/Interfaces/IApplicationDbContext.cs": {
-    "mtime": 1793844879.2212794,
-    "seen": 1793905058.2958157,
-    "ast_hash": "6745fd33f4c3d1b11048356975608eee",
+    "mtime": 1794011919.3056538,
+    "seen": 1794014907.170488,
+    "ast_hash": "4aae8ee7d6e23d45f1d8864b8b73ff6f",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/ICdnPurgeService.cs": {
@@ -240,9 +240,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Mediator/Mediator.cs": {
-    "mtime": 1793572091.6460476,
-    "seen": 1793905058.2958424,
-    "ast_hash": "a67dbeb6b54c6ce703761189a6c3015e",
+    "mtime": 1794527342.7069347,
+    "seen": 1794528177.9966266,
+    "ast_hash": "3526312126a65ab2cb631de0b709294d",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Categories/Commands/CreateCategoryCommand.cs": {
@@ -318,15 +318,15 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/PublicMenu/DTOs/PublicMenuResponse.cs": {
-    "mtime": 1793904949.903322,
-    "seen": 1793905058.2958887,
-    "ast_hash": "9818eed0cf4d7fc3173775f49c891d97",
+    "mtime": 1794011919.3476076,
+    "seen": 1794014907.170573,
+    "ast_hash": "28229b463ecfe5b03ef45cd49691d2f4",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/PublicMenu/Queries/GetPublicMenuQuery.cs": {
-    "mtime": 1793904951.5980446,
-    "seen": 1793905058.2958899,
-    "ast_hash": "9603af60c43a5400f83f725eb6e1b134",
+    "mtime": 1794528277.426519,
+    "seen": 1794528319.7957938,
+    "ast_hash": "1e4e87d88b6e8b7ff8d61ffacb2cdcdd",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/QrCodes/Queries/GetTableQrQuery.cs": {
@@ -348,9 +348,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Commands/UpdateBrandingCommand.cs": {
-    "mtime": 1793904892.4828048,
-    "seen": 1793905058.295898,
-    "ast_hash": "e07ba290796cbbd70e91bae8679e4785",
+    "mtime": 1794011919.3496077,
+    "seen": 1794014907.170584,
+    "ast_hash": "0face05efd287e0204a40c817f23d1fb",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Validators/ProvisionTenantValidator.cs": {
@@ -384,9 +384,9 @@
     "semantic_hash": "ac7dc87c9028bb0293b1d6f92d4a76fe"
   },
   "src/RestoCore.Domain/Entities/MenuItem.cs": {
-    "mtime": 1793844804.0793831,
-    "seen": 1793905058.2959175,
-    "ast_hash": "b34717ec0a282bc7cd41436289ccf0aa",
+    "mtime": 1794011919.41203,
+    "seen": 1794014907.1706061,
+    "ast_hash": "23f0aad821e6dfa13476816774a1cb3f",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/Entities/MenuPublishJob.cs": {
@@ -414,9 +414,9 @@
     "semantic_hash": "a7015dd1736b521355d3f42e8579cec4"
   },
   "src/RestoCore.Domain/Entities/Tenant.cs": {
-    "mtime": 1793844806.1831973,
-    "seen": 1793905058.295926,
-    "ast_hash": "deb4c5cc522616773131d909d0b75330",
+    "mtime": 1794011919.4130309,
+    "seen": 1794014907.1706412,
+    "ast_hash": "b617d0b708e4c06096954af4b2b30de4",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/RestoCore.Domain.csproj": {
@@ -426,9 +426,9 @@
     "semantic_hash": "46b0780bd56312ea2d1bab391f179e89"
   },
   "src/RestoCore.Domain/ValueObjects/BrandingConfig.cs": {
-    "mtime": 1793904831.9887836,
-    "seen": 1793905058.2959304,
-    "ast_hash": "0a6e8f707e98ca6066575374dfaa0987",
+    "mtime": 1794011919.4130309,
+    "seen": 1794014907.170652,
+    "ast_hash": "9c47513bd74303e58f4514ba85ce6205",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/ValueObjects/CanvasElement.cs": {
@@ -444,21 +444,21 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Authorization/OpaAuthorizationHandler.cs": {
-    "mtime": 1793572091.6705978,
-    "seen": 1793905058.2959344,
-    "ast_hash": "af6af331306685b853b26100dc817d12",
-    "semantic_hash": "af6af331306685b853b26100dc817d12"
+    "mtime": 1794527461.5661614,
+    "seen": 1794528177.9967356,
+    "ast_hash": "78789a62c6f15288a181d29ec9a7f49f",
+    "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Authorization/OpaClient.cs": {
-    "mtime": 1793572091.6716034,
-    "seen": 1793905058.2959356,
-    "ast_hash": "1a70bd5296f40754a06d776c58448e05",
-    "semantic_hash": "1a70bd5296f40754a06d776c58448e05"
+    "mtime": 1794527459.4665816,
+    "seen": 1794528177.996737,
+    "ast_hash": "a1e2f3d7a45f46d1c11a7dfaf8d7eb2c",
+    "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Cdn/LocalDevelopmentCdnPurgeService.cs": {
-    "mtime": 1793574199.1489725,
-    "seen": 1793905058.2959383,
-    "ast_hash": "0dc0b264c3b5fe671197b9355862f90e",
+    "mtime": 1794527248.1043675,
+    "seen": 1794528177.996741,
+    "ast_hash": "9611cc28d6c0cffe3c7d5fb93ad4d9db",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/MultiTenancy/TenantContext.cs": {
@@ -468,21 +468,21 @@
     "semantic_hash": "e2da9e29dd3123e42e2a17b24a4b412f"
   },
   "src/RestoCore.Infrastructure/MultiTenancy/TenantResolutionMiddleware.cs": {
-    "mtime": 1788842854.7805061,
-    "seen": 1791663031.74603,
-    "ast_hash": "67c90e40dee71ac4aa19a46c25903275",
-    "semantic_hash": "67c90e40dee71ac4aa19a46c25903275"
+    "mtime": 1794527518.777738,
+    "seen": 1794528177.9967484,
+    "ast_hash": "93bc5a89653aa5edf3f47cf5c6b03923",
+    "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/ApplicationDbContext.cs": {
-    "mtime": 1793844881.3715458,
-    "seen": 1793905058.2959476,
-    "ast_hash": "2cb33770a25eca6b4e82b5132994b46a",
+    "mtime": 1794527249.9077392,
+    "seen": 1794528177.99675,
+    "ast_hash": "c08c3c27c53296a053da548d333a87f8",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Configurations/MenuConfiguration.cs": {
-    "mtime": 1793844875.5699549,
-    "seen": 1793905058.2959507,
-    "ast_hash": "5a5ea483ceebd1f875a64bbfe32cb8e1",
+    "mtime": 1794011919.4240394,
+    "seen": 1794014907.1706858,
+    "ast_hash": "a522f90ae54753668bc621cf394dc9b3",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Configurations/MenuPublishJobConfiguration.cs": {
@@ -498,9 +498,9 @@
     "semantic_hash": "8b80b29dffb98dc89c77240a765af4af"
   },
   "src/RestoCore.Infrastructure/Persistence/Configurations/TenantConfiguration.cs": {
-    "mtime": 1793844877.694138,
-    "seen": 1793905058.2959561,
-    "ast_hash": "3d6840ba67fddd80b9ee419a21ee396f",
+    "mtime": 1794011919.4240394,
+    "seen": 1794014907.1706946,
+    "ast_hash": "5a8b1c3a506b96185387ac330ae10a50",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Migrations/20260906001559_InitialCreate.Designer.cs": {
@@ -552,9 +552,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Storage/SeaweedStorageService.cs": {
-    "mtime": 1793572091.709474,
-    "seen": 1793905058.2959838,
-    "ast_hash": "21cf68535c1f8c9e0be3a5e3700cd130",
+    "mtime": 1794527457.510331,
+    "seen": 1794528177.9967911,
+    "ast_hash": "6ed052c7f8bbdc6c77cb2897ac79aab9",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Telemetry/OpenTelemetryExtensions.cs": {
@@ -834,9 +834,9 @@
     "semantic_hash": ""
   },
   "AGENTS.md": {
-    "mtime": 1793839354.9555972,
-    "seen": 1793905058.2960792,
-    "ast_hash": "f5436e0aedce3342d6e277204ef54d51",
+    "mtime": 1794526087.7072532,
+    "seen": 1794528177.996913,
+    "ast_hash": "28b6920e6e1267e7e7578a91d2f1b0e8",
     "semantic_hash": ""
   },
   "README.md": {
@@ -1110,9 +1110,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/Repositories/ICatalogRepository.cs": {
-    "mtime": 1793826709.7842202,
-    "seen": 1793905058.2958326,
-    "ast_hash": "bd547edb193509922fdc2e831d7331a7",
+    "mtime": 1794527140.9810789,
+    "seen": 1794528177.996612,
+    "ast_hash": "6c2dd6ea299fc9c90703d73c690ca642",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/Repositories/IKitchenRepository.cs": {
@@ -1134,9 +1134,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Repositories/CatalogRepository.cs": {
-    "mtime": 1793826710.9871824,
-    "seen": 1793905058.2959678,
-    "ast_hash": "bac5f58d9c6a5e6a986257403bfb4894",
+    "mtime": 1794528275.9850214,
+    "seen": 1794528319.795891,
+    "ast_hash": "6368338d421a79f3fd5bab89df57481b",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Repositories/KitchenRepository.cs": {
@@ -1206,9 +1206,9 @@
     "semantic_hash": ""
   },
   ".agents/skills/sync-docs-specs/scripts/compare-docs.ps1": {
-    "mtime": 1793834749.3110688,
-    "seen": 1793905058.2957504,
-    "ast_hash": "d7c4716ceed7588c827844b9c9b80157",
+    "mtime": 1794011919.2742035,
+    "seen": 1794014907.1704154,
+    "ast_hash": "692d2dd41dca6d43d5b82e4cb5fedb2c",
     "semantic_hash": ""
   },
   ".agents/skills/sync-docs-specs/SKILL.md": {
@@ -1236,9 +1236,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/IOrderQueueService.cs": {
-    "mtime": 1793572091.6380227,
-    "seen": 1793905058.2958202,
-    "ast_hash": "db7d24af144cb373be7fe987a349f8e2",
+    "mtime": 1794527142.7466755,
+    "seen": 1794528177.9965994,
+    "ast_hash": "005ea59a80ae329218e82589bb918f83",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/Repositories/IOrderRepository.cs": {
@@ -1254,39 +1254,39 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/Entities/Order.cs": {
-    "mtime": 1793572091.6680942,
-    "seen": 1793905058.2959232,
-    "ast_hash": "daf4c47212546bd1a4262211fafa1b92",
+    "mtime": 1794527306.704599,
+    "seen": 1794528177.9967194,
+    "ast_hash": "25a37a483dd9f58e7a68b09df2c686a2",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/BackgroundServices/OrderProcessorWorker.cs": {
-    "mtime": 1793572091.672109,
-    "seen": 1793905058.2959373,
-    "ast_hash": "766e7454194c1e0d2b810cc6d77bfc99",
+    "mtime": 1794527401.46959,
+    "seen": 1794528177.9967382,
+    "ast_hash": "260b027d9dddfef3a717329009e71218",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Messaging/RedisOrderQueueService.cs": {
-    "mtime": 1793572091.6741202,
-    "seen": 1793905058.2959425,
-    "ast_hash": "b9f6aa56936167ad5e5135702bdc0141",
+    "mtime": 1794527399.7413845,
+    "seen": 1794528177.996746,
+    "ast_hash": "a2fdc5b982c02c94a11f058ac7e46503",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Configurations/OrderConfiguration.cs": {
-    "mtime": 1793572091.6982193,
-    "seen": 1793905058.2959535,
-    "ast_hash": "05a14071e129d83bfb396306439f52a4",
+    "mtime": 1794527308.5238218,
+    "seen": 1794528177.9967566,
+    "ast_hash": "8117630cbd3484db8e0a3ea4921d89a8",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Repositories/OrderRepository.cs": {
-    "mtime": 1793572091.7017303,
-    "seen": 1793905058.295972,
-    "ast_hash": "3fe16d571e78e5b0c3f2570d2303b27c",
+    "mtime": 1794527310.286606,
+    "seen": 1794528177.9967778,
+    "ast_hash": "85f8a463950a31987df322a62b8ef335",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/WebSockets/KitchenWebSocketManager.cs": {
-    "mtime": 1793572091.7109864,
-    "seen": 1793905058.2959864,
-    "ast_hash": "eb471c191eb4e8eee563f93c4aa6d4d0",
+    "mtime": 1794527403.4799714,
+    "seen": 1794528177.9967942,
+    "ast_hash": "9627ecfb2916c13832b4dd4d0dd4462e",
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/Orders/SubmitOrderCommandHandlerTests.cs": {
@@ -1470,9 +1470,9 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/AdminProfileEndpoints.cs": {
-    "mtime": 1793904953.859624,
-    "seen": 1793905058.295788,
-    "ast_hash": "194e3350fa9746518c1f9022dcb0a347",
+    "mtime": 1794011919.3046522,
+    "seen": 1794014907.1704588,
+    "ast_hash": "6c204d25b441d329be2c0e19662d3b74",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Categories/Commands/DeleteCategoryCommand.cs": {
@@ -1500,27 +1500,27 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Commands/PatchTenantProfileCommand.cs": {
-    "mtime": 1793904866.0498,
-    "seen": 1793905058.2958953,
-    "ast_hash": "ca45a06522a777dc46b5522cc0549300",
+    "mtime": 1794011919.3486073,
+    "seen": 1794014907.170581,
+    "ast_hash": "de0344ce15cf8e8aa59d60c082cffa06",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Commands/UpdateTenantProfileCommand.cs": {
-    "mtime": 1793904863.9392786,
-    "seen": 1793905058.2958992,
-    "ast_hash": "a81bbdd75243df6c9ee47dc2af684507",
+    "mtime": 1794011919.3496077,
+    "seen": 1794014907.1705854,
+    "ast_hash": "ded48adbb33e492cdf4bcc7cf4d49fdf",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/DTOs/TenantProfileResponse.cs": {
-    "mtime": 1793904860.6379764,
-    "seen": 1793905058.2959003,
-    "ast_hash": "6535c7228532b3522c174861f282a96c",
+    "mtime": 1794011919.3506074,
+    "seen": 1794014907.1705868,
+    "ast_hash": "74233afb8769395b4879a429bb4a5ac8",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Queries/GetTenantProfileQuery.cs": {
-    "mtime": 1793904862.3738315,
-    "seen": 1793905058.2959032,
-    "ast_hash": "a292feb98d117ccb786b860e201f690c",
+    "mtime": 1794011919.3506074,
+    "seen": 1794014907.1705897,
+    "ast_hash": "29e2fcb1f0b05092cd7bc35ec4bf9387",
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/Categories/CategoryQueryHandlerTests.cs": {
@@ -1548,9 +1548,9 @@
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/Tenants/TenantProfileHandlerTests.cs": {
-    "mtime": 1793904984.7960455,
-    "seen": 1793905058.2960374,
-    "ast_hash": "f23d55169cf39619c0fc3a5864e9edce",
+    "mtime": 1794011919.4743457,
+    "seen": 1794014907.1708164,
+    "ast_hash": "e7641f7076e54e86a1f74f48d9c2ae4f",
     "semantic_hash": ""
   },
   "specs/009-category-abmc-restaurant-profile/contracts/contracts.md": {
@@ -1632,15 +1632,15 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Repositories/UserRepository.cs": {
-    "mtime": 1793572091.7057471,
-    "seen": 1793905058.2959752,
-    "ast_hash": "674ac4fa96196c4394f90fccf05293f1",
+    "mtime": 1794527311.9308314,
+    "seen": 1794528177.9967806,
+    "ast_hash": "90666352a28ee8212436476d9e31fd48",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Seed/DatabaseSeeder.cs": {
-    "mtime": 1793845055.121919,
-    "seen": 1793905058.2959766,
-    "ast_hash": "911b252118bd0e6b0b830ed8025e34bd",
+    "mtime": 1794011919.4250433,
+    "seen": 1794014907.1707242,
+    "ast_hash": "1cb7461754ddabb4744577efca9bfdb5",
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/Auth/LoginCommandHandlerTests.cs": {
@@ -1698,177 +1698,285 @@
     "semantic_hash": ""
   },
   "src/RestoCore.Api/Endpoints/AnalyticsEndpoints.cs": {
-    "mtime": 1793845297.86213,
-    "seen": 1793905058.2957923,
-    "ast_hash": "13b216ed7fd74db779b5216a73a9aa71",
+    "mtime": 1794011919.3046522,
+    "seen": 1794014907.1704648,
+    "ast_hash": "804200216241437d9dd42acd72dc7265",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/IAnalyticsEventQueue.cs": {
-    "mtime": 1793844910.5005789,
-    "seen": 1793905058.2958138,
-    "ast_hash": "f2f434b54ea869930a3ecde4aa61c611",
+    "mtime": 1794011919.3056538,
+    "seen": 1794014907.1704865,
+    "ast_hash": "719b916cd47b089628861c2f0c1d2751",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Common/Interfaces/Repositories/IAnalyticsRepository.cs": {
-    "mtime": 1793844912.0292175,
-    "seen": 1793905058.2958307,
-    "ast_hash": "33642fc3220c2634b49b012d6c048ff2",
+    "mtime": 1794011919.3056538,
+    "seen": 1794014907.1705036,
+    "ast_hash": "05dcab10151cbfc01e4cee71b41a8fbc",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Analytics/Commands/CollectAnalyticsEventCommand.cs": {
-    "mtime": 1793845294.195285,
-    "seen": 1793905058.2958434,
-    "ast_hash": "7ddaaf1d877f3f6a899982d2ed6a5251",
+    "mtime": 1794011919.3066533,
+    "seen": 1794014907.1705196,
+    "ast_hash": "6655e06193078a8da9c25fc7f2f09512",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Analytics/DTOs/AnalyticsDtos.cs": {
-    "mtime": 1793844808.4278283,
-    "seen": 1793905058.2958446,
-    "ast_hash": "1b69bf3bc3d871d569c4a3a142232bac",
+    "mtime": 1794011919.3076532,
+    "seen": 1794014907.170521,
+    "ast_hash": "9825a49de9e634c5ff89ddaa0ca84374",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Analytics/Queries/GetAnalyticsDashboardQuery.cs": {
-    "mtime": 1793845296.2411149,
-    "seen": 1793905058.295846,
-    "ast_hash": "e3b31e2d27e7ef4aaf5e6850d819c3f3",
+    "mtime": 1794011919.3434505,
+    "seen": 1794014907.1705227,
+    "ast_hash": "021e8cfc75791746bfcd9dddcfd68820",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/MenuItems/Queries/GetMenuItemsQueries.cs": {
-    "mtime": 1793826712.3909218,
-    "seen": 1793905058.295876,
-    "ast_hash": "689964d3ab4f278f0b16e626e1379f26",
+    "mtime": 1794011919.3476076,
+    "seen": 1794014907.170559,
+    "ast_hash": "ec3318321a9a5f9dc4a088337d1a82c2",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Commands/PatchBrandingCommand.cs": {
-    "mtime": 1793904894.5514195,
-    "seen": 1793905058.295894,
-    "ast_hash": "d94b64a4838dd95f4a862d5b249f0576",
+    "mtime": 1794011919.3486073,
+    "seen": 1794014907.1705794,
+    "ast_hash": "8df25b14b3755a996ccc5403756a60f7",
     "semantic_hash": ""
   },
   "src/RestoCore.Application/Features/Tenants/Queries/GetBrandingQuery.cs": {
-    "mtime": 1793904890.8556485,
-    "seen": 1793905058.2959018,
-    "ast_hash": "1c79479d5fee7ac6327123e124499ece",
+    "mtime": 1794011919.3506074,
+    "seen": 1794014907.1705883,
+    "ast_hash": "82452ef100c6fa64fd3a09a0a968b778",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/Entities/DailyCategoryInteractionSummary.cs": {
-    "mtime": 1793844830.246586,
-    "seen": 1793905058.2959123,
-    "ast_hash": "0ce1c9b514eb700260fe3f82bdf67148",
+    "mtime": 1794011919.3706217,
+    "seen": 1794014907.1706,
+    "ast_hash": "5d73f34fe67dddecc1a98f6c988b4433",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/Entities/DailyItemViewSummary.cs": {
-    "mtime": 1793844828.637028,
-    "seen": 1793905058.2959135,
-    "ast_hash": "ac5464159f5d161eb8fa3f4877ba5c1e",
+    "mtime": 1794011919.3915079,
+    "seen": 1794014907.1706014,
+    "ast_hash": "9197bd7bb56e64ba33ec0059304d2097",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/Entities/DailyMenuTrafficSummary.cs": {
-    "mtime": 1793844826.3860996,
-    "seen": 1793905058.2959151,
-    "ast_hash": "9579e92cf7b43b09876848373bed8c72",
+    "mtime": 1794011919.3915079,
+    "seen": 1794014907.170603,
+    "ast_hash": "f60eb030049be84ab93ca5b7a7a24f40",
     "semantic_hash": ""
   },
   "src/RestoCore.Domain/Entities/HourlyMenuTrafficSummary.cs": {
-    "mtime": 1793844831.473824,
-    "seen": 1793905058.2959163,
-    "ast_hash": "797d5da869fb2ca7f2592cc4d259ba33",
+    "mtime": 1794011919.41203,
+    "seen": 1794014907.1706042,
+    "ast_hash": "5cf9e986436f0f4c009e579aa2cd4d9b",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Messaging/AnalyticsEventQueue.cs": {
-    "mtime": 1793844961.324149,
-    "seen": 1793905058.2959414,
-    "ast_hash": "5e14816f153d96531e575d61d516ccf7",
+    "mtime": 1794011919.4225361,
+    "seen": 1794014907.1706724,
+    "ast_hash": "75bf99b62626c847ed1da0d68e7433df",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Configurations/AnalyticsConfiguration.cs": {
-    "mtime": 1793844873.9961076,
-    "seen": 1793905058.2959487,
-    "ast_hash": "8c6b344084fc6cb1574983c7fab291f3",
+    "mtime": 1794011919.4225361,
+    "seen": 1794014907.1706836,
+    "ast_hash": "30616d28d1dc167b66a56ff10da59843",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Persistence/Repositories/AnalyticsRepository.cs": {
-    "mtime": 1793844914.2191072,
-    "seen": 1793905058.2959664,
-    "ast_hash": "ccdf8840407c6e070dbb290d9723fd6e",
+    "mtime": 1794011919.4240394,
+    "seen": 1794014907.170709,
+    "ast_hash": "853968470ef37d8264f644d940465b42",
     "semantic_hash": ""
   },
   "src/RestoCore.Infrastructure/Workers/AnalyticsAggregationWorker.cs": {
-    "mtime": 1793844965.6015203,
-    "seen": 1793905058.2959876,
-    "ast_hash": "3b1ce76079c1addb721f8b6992a8abf1",
+    "mtime": 1794011919.4261682,
+    "seen": 1794014907.1707404,
+    "ast_hash": "5f495065e2510b4bb06a88642b5c3ec7",
     "semantic_hash": ""
   },
   "tests/RestoCore.IntegrationTests/Endpoints/AnalyticsEndpointsTests.cs": {
-    "mtime": 1793845136.904574,
-    "seen": 1793905058.2959917,
-    "ast_hash": "e716c33eecc40a19fff34adc026a3039",
+    "mtime": 1794011919.4386752,
+    "seen": 1794014907.1707473,
+    "ast_hash": "40cc037f05a9c5c5b7524742190e4282",
     "semantic_hash": ""
   },
   "tests/RestoCore.SecurityTests/MultiTenancy/AnalyticsTenantIsolationTests.cs": {
-    "mtime": 1793845134.6470294,
-    "seen": 1793905058.2960064,
-    "ast_hash": "0baad64849544114e171eb45e236ed6e",
+    "mtime": 1794011919.4396746,
+    "seen": 1794014907.17077,
+    "ast_hash": "549101cb50c1e99479d1d77009ecde8f",
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/Analytics/CollectAnalyticsEventCommandHandlerTests.cs": {
-    "mtime": 1793845299.5285368,
-    "seen": 1793905058.296013,
-    "ast_hash": "743763e5f9b19d6d3df335b7fc9b0956",
+    "mtime": 1794011919.4541836,
+    "seen": 1794014907.170779,
+    "ast_hash": "340bf18c138c5fdee464fa7dc111e8b2",
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/Analytics/GetAnalyticsDashboardQueryHandlerTests.cs": {
-    "mtime": 1793845301.315977,
-    "seen": 1793905058.296014,
-    "ast_hash": "98d310846f72f54cf340a14fefea4f23",
+    "mtime": 1794011919.4728422,
+    "seen": 1794014907.1707804,
+    "ast_hash": "b92cd72f89a26c4629d6706a5a48505a",
     "semantic_hash": ""
   },
   "tests/RestoCore.UnitTests/Features/MenuItems/MenuItemQueryHandlerTests.cs": {
-    "mtime": 1793826716.4079087,
-    "seen": 1793905058.2960253,
-    "ast_hash": "a10cffecfce843d4a16ae3df92e665dc",
+    "mtime": 1794011919.4728422,
+    "seen": 1794014907.1707985,
+    "ast_hash": "2eb227f948aacb624af9c81ad5373556",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/contracts/contracts.md": {
-    "mtime": 1793839300.668305,
-    "seen": 1793905058.296179,
-    "ast_hash": "7f32f8e64cfb44627c02c6083969c5d1",
+    "mtime": 1794011919.3001459,
+    "seen": 1794014907.1710346,
+    "ast_hash": "acf90913c60c779be4951d23df9c6448",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/data-model.md": {
-    "mtime": 1793839230.28736,
-    "seen": 1793905058.2961802,
-    "ast_hash": "5381aa3abf829659ae0119f1566937bc",
+    "mtime": 1794011919.3001459,
+    "seen": 1794014907.1710367,
+    "ast_hash": "b5f26823efb1080abfc59de1f4898641",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/plan.md": {
-    "mtime": 1793839304.8969638,
-    "seen": 1793905058.2961812,
-    "ast_hash": "bc1446de0ab924ffc1bded17175fa0bc",
+    "mtime": 1794011919.3011458,
+    "seen": 1794014907.1710382,
+    "ast_hash": "bac48d073e3c76178e617ec19ad59cf8",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/quickstart.md": {
-    "mtime": 1793839302.7691784,
-    "seen": 1793905058.2961826,
-    "ast_hash": "5b75e0d1afaf7ff137e1022e89a97167",
+    "mtime": 1794011919.3011458,
+    "seen": 1794014907.17104,
+    "ast_hash": "03cd6a6ca7842e7a447646233158b242",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/research.md": {
-    "mtime": 1793839228.8727899,
-    "seen": 1793905058.2961838,
-    "ast_hash": "a523cb42a6056cfdd7abfdfd205cdc6a",
+    "mtime": 1794011919.3011458,
+    "seen": 1794014907.1710415,
+    "ast_hash": "edec58f019073aeae31f6c82c45a3ba5",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/spec.md": {
-    "mtime": 1793834627.3965454,
-    "seen": 1793905058.2961848,
-    "ast_hash": "e91e95b20659c772ee0b38425818eca6",
+    "mtime": 1794011919.3021476,
+    "seen": 1794014907.1710434,
+    "ast_hash": "596085fd4d4a7ff555feb9bb517a9dba",
     "semantic_hash": ""
   },
   "specs/011-menu-analytics-and-telemetry/tasks.md": {
-    "mtime": 1793845384.3154955,
-    "seen": 1793905058.2961862,
-    "ast_hash": "ec26d5bcfa464afedd07aae5363907cb",
+    "mtime": 1794011919.303146,
+    "seen": 1794014907.1710448,
+    "ast_hash": "5fb2409843c5f215bdde866619393e5e",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Common/Behaviors/ValidationBehavior.cs": {
+    "mtime": 1794527340.4987142,
+    "seen": 1794528177.9965894,
+    "ast_hash": "e5e411df21ede7fc25842abe289d2dc5",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Common/Caching/IPublicMenuCacheService.cs": {
+    "mtime": 1794527136.1540854,
+    "seen": 1794528177.9965909,
+    "ast_hash": "0cb125b257357d126e4fc4b3cdaed0fd",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Common/Mediator/IPipelineBehavior.cs": {
+    "mtime": 1794527602.5807548,
+    "seen": 1794528177.9966238,
+    "ast_hash": "6fc3e0aef692d6c281fae04a528eef17",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Application/Common/Mediator/IRequestInvoker.cs": {
+    "mtime": 1794527139.1927345,
+    "seen": 1794528177.9966252,
+    "ast_hash": "4a7f25f9964082363a783e5d506c3251",
+    "semantic_hash": ""
+  },
+  "src/RestoCore.Infrastructure/Caching/PublicMenuHybridCacheService.cs": {
+    "mtime": 1794527191.7144604,
+    "seen": 1794528177.9967396,
+    "ast_hash": "2bfaee87fe8614b374ed35f2e500fbf2",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Application/MediatorPipelineTests.cs": {
+    "mtime": 1794527338.3673978,
+    "seen": 1794528177.9968224,
+    "ast_hash": "d619ef314650f2cc1bdf4d1b2bf8152f",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Features/PublicMenu/PublicMenuSoftDeleteFilterTests.cs": {
+    "mtime": 1794528246.6244183,
+    "seen": 1794528319.7959785,
+    "ast_hash": "408a4aec9fdf33d18454d82cf5541bdc",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Infrastructure/GovernanceAndSecurityOptimizationTests.cs": {
+    "mtime": 1794527657.7537036,
+    "seen": 1794528177.9968593,
+    "ast_hash": "68191c16d6a315ae6987b4d5bb65427c",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Infrastructure/PersistenceOptimizationTests.cs": {
+    "mtime": 1794527897.4139352,
+    "seen": 1794528177.996861,
+    "ast_hash": "12dda6d52f5ebcd476f82b70e43cc6f0",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Infrastructure/PublicMenuHybridCacheServiceTests.cs": {
+    "mtime": 1794527188.533329,
+    "seen": 1794528177.9968622,
+    "ast_hash": "1d3332de22c18ecd4f57948608a41a8c",
+    "semantic_hash": ""
+  },
+  "tests/RestoCore.UnitTests/Infrastructure/WebSocketAndStreamWorkerOptimizationTests.cs": {
+    "mtime": 1794527950.3473866,
+    "seen": 1794528177.9968636,
+    "ast_hash": "e935f9c6b965e2701b170a948900028a",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/contracts/contracts.md": {
+    "mtime": 1794526031.7197132,
+    "seen": 1794528177.9970536,
+    "ast_hash": "0785b81a48089e7d312f419d104cc56e",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/data-model.md": {
+    "mtime": 1794525965.9433758,
+    "seen": 1794528177.997055,
+    "ast_hash": "bd5df200ba21eaf363bf617628171cfb",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/plan.md": {
+    "mtime": 1794526035.2236102,
+    "seen": 1794528177.9970562,
+    "ast_hash": "04b0a7f3a349a7fb5d27e3351845cfe1",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/quickstart.md": {
+    "mtime": 1794526033.3054354,
+    "seen": 1794528177.9970574,
+    "ast_hash": "7f87680b18ba1abdc3abb32715450008",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/research.md": {
+    "mtime": 1794525963.7069662,
+    "seen": 1794528177.9970589,
+    "ast_hash": "72b2d6ef7c0cfd01d60c24ca471532e3",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/spec.md": {
+    "mtime": 1794528071.5958483,
+    "seen": 1794528177.99706,
+    "ast_hash": "c61382debebf95eaba7c2df47f7fe6d6",
+    "semantic_hash": ""
+  },
+  "specs/012-backend-architecture-optimizations/tasks.md": {
+    "mtime": 1794528150.7414713,
+    "seen": 1794528177.9970615,
+    "ast_hash": "d2b13bd305bd3a4dfc03457e92349713",
     "semantic_hash": ""
   }
 }

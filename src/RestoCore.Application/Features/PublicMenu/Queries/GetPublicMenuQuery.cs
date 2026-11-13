@@ -38,7 +38,7 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
         var activeDishIds = tenant.Categories
             .Where(c => c.IsActive)
             .SelectMany(c => c.Items)
-            .Where(i => i.IsAvailable)
+            .Where(i => !i.IsDeleted && i.IsAvailable)
             .Select(i => i.Id)
             .ToHashSet();
 
@@ -85,38 +85,44 @@ public class GetPublicMenuQueryHandler : IRequestHandler<GetPublicMenuQuery, (Pu
                 LayoutMode = tenant.BrandingConfig.LayoutMode
             },
             LayoutConfig = layoutConfigDto,
-            Categories = tenant.Categories.Select(c => new PublicCategoryDto
-            {
-                Id = c.Id,
-                Name = c.Name,
-                Description = c.Description,
-                Items = c.Items.Select(m => new PublicMenuItemDto
+            Categories = tenant.Categories
+                .Where(c => c.IsActive)
+                .OrderBy(c => c.DisplayOrder)
+                .Select(c => new PublicCategoryDto
                 {
-                    Id = m.Id,
-                    Name = m.Name,
-                    Description = m.Description,
-                    BasePrice = m.BasePrice,
-                    IsAvailable = m.IsAvailable,
-                    ImageUrl = m.ImageUrl,
-                    Allergens = m.Allergens,
-                    DietaryLabels = m.DietaryLabels,
-                    ModifierGroups = m.ModifierGroups.Select(mg => new PublicModifierGroupDto
-                    {
-                        Id = mg.Id,
-                        Name = mg.Name,
-                        MinSelection = mg.MinSelection,
-                        MaxSelection = mg.MaxSelection,
-                        IsRequired = mg.IsRequired,
-                        Options = mg.Options.Select(mo => new PublicModifierOptionDto
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    Items = c.Items
+                        .Where(m => !m.IsDeleted)
+                        .OrderBy(m => m.DisplayOrder)
+                        .Select(m => new PublicMenuItemDto
                         {
-                            Id = mo.Id,
-                            Name = mo.Name,
-                            PriceDelta = mo.PriceDelta,
-                            IsAvailable = mo.IsAvailable
+                            Id = m.Id,
+                            Name = m.Name,
+                            Description = m.Description,
+                            BasePrice = m.BasePrice,
+                            IsAvailable = m.IsAvailable,
+                            ImageUrl = m.ImageUrl,
+                            Allergens = m.Allergens,
+                            DietaryLabels = m.DietaryLabels,
+                            ModifierGroups = m.ModifierGroups.Select(mg => new PublicModifierGroupDto
+                            {
+                                Id = mg.Id,
+                                Name = mg.Name,
+                                MinSelection = mg.MinSelection,
+                                MaxSelection = mg.MaxSelection,
+                                IsRequired = mg.IsRequired,
+                                Options = mg.Options.Select(mo => new PublicModifierOptionDto
+                                {
+                                    Id = mo.Id,
+                                    Name = mo.Name,
+                                    PriceDelta = mo.PriceDelta,
+                                    IsAvailable = mo.IsAvailable
+                                }).ToList()
+                            }).ToList()
                         }).ToList()
-                    }).ToList()
                 }).ToList()
-            }).ToList()
         };
 
         // Compute deterministic ETag from CurrentVersionHash or payload JSON

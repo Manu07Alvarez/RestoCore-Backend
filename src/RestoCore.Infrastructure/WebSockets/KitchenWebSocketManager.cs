@@ -12,7 +12,7 @@ using RestoCore.Application.Common.Interfaces;
 
 public class KitchenWebSocketManager : IKitchenNotifier
 {
-    private readonly ConcurrentDictionary<string, ConcurrentBag<WebSocket>> _socketsByTenant = new();
+    private readonly ConcurrentDictionary<string, ConcurrentDictionary<Guid, WebSocket>> _socketsByTenant = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<KitchenWebSocketManager> _logger;
 
     public KitchenWebSocketManager(ILogger<KitchenWebSocketManager> logger)
@@ -20,17 +20,43 @@ public class KitchenWebSocketManager : IKitchenNotifier
         _logger = logger;
     }
 
-    public void RegisterSocket(string tenantSlug, WebSocket socket)
+    public Guid RegisterSocket(string tenantSlug, WebSocket socket)
     {
-        var sockets = _socketsByTenant.GetOrAdd(tenantSlug, _ => new ConcurrentBag<WebSocket>());
-        sockets.Add(socket);
-        _logger.LogInformation("Kitchen WebSocket registered for tenant {TenantSlug}. Total connections: {Count}",
-            tenantSlug, sockets.Count);
+        var connectionId = Guid.NewGuid();
+        var sockets = _socketsByTenant.GetOrAdd(tenantSlug, static _ => new ConcurrentDictionary<Guid, WebSocket>());
+        sockets.TryAdd(connectionId, socket);
+
+        _logger.LogInformation(
+            "Kitchen WebSocket {ConnectionId} registered for tenant {TenantSlug}. Total connections: {Count}",
+            connectionId,
+            tenantSlug,
+            sockets.Count);
+
+        return connectionId;
     }
+
+    public void RemoveAndDisposeSocket(string tenantSlug, Guid connectionId)
+    {
+        if (_socketsByTenant.TryGetValue(tenantSlug, out var sockets) &&
+            sockets.TryRemove(connectionId, out var socket))
+        {
+            try
+            {
+                socket.Dispose();
+            }
+            catch
+            {
+                // Ignore transport disposal errors on already aborted sockets
+            }
+        }
+    }
+
+    public int GetActiveConnectionCount(string tenantSlug)
+        => _socketsByTenant.TryGetValue(tenantSlug, out var sockets) ? sockets.Count : 0;
 
     public async Task BroadcastOrderCreatedAsync(string tenantSlug, OrderCreatedNotification notification, CancellationToken ct = default)
     {
-        if (!_socketsByTenant.TryGetValue(tenantSlug, out var sockets))
+        if (!_socketsByTenant.TryGetValue(tenantSlug, out var sockets) || sockets.IsEmpty)
         {
             return;
         }
@@ -45,9 +71,7 @@ public class KitchenWebSocketManager : IKitchenNotifier
         var bytes = Encoding.UTF8.GetBytes(json);
         var buffer = new ArraySegment<byte>(bytes);
 
-        var deadSockets = new List<WebSocket>();
-
-        foreach (var socket in sockets)
+        foreach (var (connectionId, socket) in sockets)
         {
             if (socket.State == WebSocketState.Open)
             {
@@ -57,13 +81,13 @@ public class KitchenWebSocketManager : IKitchenNotifier
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to send WebSocket message to client in tenant {TenantSlug}", tenantSlug);
-                    deadSockets.Add(socket);
+                    _logger.LogWarning(ex, "Failed to send WebSocket message to connection {ConnectionId} in tenant {TenantSlug}", connectionId, tenantSlug);
+                    RemoveAndDisposeSocket(tenantSlug, connectionId);
                 }
             }
             else
             {
-                deadSockets.Add(socket);
+                RemoveAndDisposeSocket(tenantSlug, connectionId);
             }
         }
     }

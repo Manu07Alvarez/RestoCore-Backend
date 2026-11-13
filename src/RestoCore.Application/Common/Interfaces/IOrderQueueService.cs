@@ -10,6 +10,7 @@ public interface IOrderQueueService
     Task<string> EnqueueOrderAsync(string tenantSlug, OrderIngestionPayload payload, CancellationToken ct = default);
     Task<OrderStreamMessage?> DequeueNextOrderAsync(string tenantSlug, string consumerGroup, string consumerName, CancellationToken ct = default);
     Task AcknowledgeOrderAsync(string tenantSlug, string consumerGroup, string messageId, CancellationToken ct = default);
+    Task<IReadOnlyCollection<string>> GetActiveTenantStreamsAsync(CancellationToken ct = default);
 }
 
 public record OrderIngestionPayload(

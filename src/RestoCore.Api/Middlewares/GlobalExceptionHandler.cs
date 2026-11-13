@@ -1,10 +1,11 @@
 namespace RestoCore.Api.Middlewares;
 
 using System.Diagnostics;
-using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 public class GlobalExceptionHandler : IExceptionHandler
 {
@@ -26,16 +27,22 @@ public class GlobalExceptionHandler : IExceptionHandler
                 string.Join("; ", valEx.Errors.Select(e => $"{e.PropertyName}: {e.ErrorMessage}")),
                 "VALIDATION_ERROR"
             ),
+            ArgumentException argEx => (
+                StatusCodes.Status400BadRequest,
+                "Bad Request",
+                argEx.Message,
+                "BAD_REQUEST"
+            ),
             KeyNotFoundException notFoundEx => (
                 StatusCodes.Status404NotFound,
                 "Resource Not Found",
                 notFoundEx.Message,
                 "RESOURCE_NOT_FOUND"
             ),
-            UnauthorizedAccessException authEx => (
+            UnauthorizedAccessException => (
                 StatusCodes.Status403Forbidden,
                 "Forbidden",
-                authEx.Message,
+                "You do not have permission to perform this operation.",
                 "FORBIDDEN"
             ),
             InvalidOperationException opEx => (
@@ -52,23 +59,33 @@ public class GlobalExceptionHandler : IExceptionHandler
             )
         };
 
-        _logger.LogError(exception, 
-            "Unhandled exception occurred: {Message}. ErrorCode: {ErrorCode}, Tenant: {TenantSlug}, TenantId: {TenantId}, StatusCode: {StatusCode}", 
-            exception.Message,
+        var tenantId = tenantContext?.TenantId?.ToString()
+            ?? httpContext.Items["TenantId"]?.ToString()
+            ?? "none";
+        var tenantSlug = tenantContext?.TenantSlug
+            ?? httpContext.Items["TenantSlug"]?.ToString()
+            ?? "none";
+
+        // ADR-0017 (OPT-07): Sanitized structured error log without dumping raw exception.Message PII
+        _logger.LogError(
+            "Operation failed. ErrorCode: {ErrorCode}, ExceptionType: {ExceptionType}, StatusCode: {StatusCode}, Tenant: {TenantSlug}, TenantId: {TenantId}",
             errorCode,
-            tenantContext?.TenantSlug ?? "none",
-            tenantContext?.TenantId?.ToString() ?? "none",
-            statusCode);
+            exception.GetType().Name,
+            statusCode,
+            tenantSlug,
+            tenantId);
+
+        var traceId = Activity.Current?.TraceId.ToString() ?? Activity.Current?.Id ?? httpContext.TraceIdentifier;
 
         var problemDetails = new ProblemDetails
         {
             Status = statusCode,
             Title = title,
             Detail = detail,
+            Type = $"https://api.restocore.com/errors/{errorCode.ToLowerInvariant()}",
             Instance = httpContext.Request.Path
         };
 
-        var traceId = Activity.Current?.Id ?? httpContext.TraceIdentifier;
         problemDetails.Extensions["traceId"] = traceId;
         problemDetails.Extensions["errorCode"] = errorCode;
 

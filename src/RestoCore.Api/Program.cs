@@ -6,16 +6,18 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using RestoCore.Api.Endpoints;
 using RestoCore.Api.Middlewares;
+using RestoCore.Application.Common.Caching;
 using RestoCore.Application.Common.Interfaces;
+using RestoCore.Application.Common.Mediator;
 using RestoCore.Application.Features.PublicMenu.Queries;
 using RestoCore.Infrastructure.Authorization;
+using RestoCore.Infrastructure.Caching;
 using RestoCore.Infrastructure.Cdn;
 using RestoCore.Infrastructure.MultiTenancy;
 using RestoCore.Infrastructure.Persistence;
 using RestoCore.Infrastructure.Qr;
 using RestoCore.Infrastructure.Storage;
 using RestoCore.Infrastructure.Telemetry;
-using RestoCore.Application.Common.Mediator;
 
 // Load .env file if present in repository root or execution directory
 var envCandidates = new[]
@@ -98,6 +100,7 @@ builder.Services.AddSwaggerGen(c =>
 });
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient();
+builder.Services.AddMemoryCache();
 
 // Strict CORS Configuration from .env or appsettings (Not overly permissive)
 var allowedOriginsSetting = Environment.GetEnvironmentVariable("CORS_ALLOWED_ORIGINS")
@@ -148,11 +151,28 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// CQRS Mediator (MIT Permissive Implementation)
+// CQRS Mediator (ADR-0016 Precompiled Invoker & Pipeline Behaviors)
 builder.Services.AddApplicationMediator(typeof(GetPublicMenuQuery).Assembly);
 
 // Multi-Tenancy
 builder.Services.AddScoped<ITenantContext, TenantContext>();
+
+// Caching (L1 Memory + L2 Redis + Redis Pub/Sub Backplane per ADR-0015)
+var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    options.Configuration = redisConfig;
+    options.InstanceName = "RestoCore:";
+});
+
+// Redis Streams & Order Queue (registered via factory for lazy initialization with AbortOnConnectFail = false)
+builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(_ =>
+{
+    var options = StackExchange.Redis.ConfigurationOptions.Parse(redisConfig);
+    options.AbortOnConnectFail = false;
+    return StackExchange.Redis.ConnectionMultiplexer.Connect(options);
+});
+builder.Services.AddSingleton<IPublicMenuCacheService, PublicMenuHybridCacheService>();
 
 // Services
 builder.Services.AddSingleton<IPasswordHasher, RestoCore.Infrastructure.Identity.PasswordHasher>();
@@ -160,14 +180,6 @@ builder.Services.AddSingleton<IQrCodeService, QrCodeService>();
 builder.Services.AddSingleton<IStorageService, SeaweedStorageService>();
 builder.Services.AddSingleton<ICdnPurgeService, LocalDevelopmentCdnPurgeService>();
 builder.Services.AddScoped<RestoCore.Application.Features.MenuLayout.Services.IMenuCompilationService, RestoCore.Infrastructure.Services.Compilation.MenuCompilationService>();
-
-// Caching (Redis)
-var redisConfig = builder.Configuration["Redis:Configuration"] ?? "localhost:6379";
-builder.Services.AddStackExchangeRedisCache(options =>
-{
-    options.Configuration = redisConfig;
-    options.InstanceName = "RestoCore:";
-});
 
 // Persistence (PostgreSQL with JSONB & GIN support)
 builder.Services.AddDbContext<ApplicationDbContext>((sp, options) =>
@@ -189,9 +201,6 @@ builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IUserRepository, RestoCore.Infrastructure.Persistence.Repositories.UserRepository>();
 builder.Services.AddScoped<RestoCore.Application.Common.Interfaces.Repositories.IAnalyticsRepository, RestoCore.Infrastructure.Persistence.Repositories.AnalyticsRepository>();
 builder.Services.AddSingleton<IAnalyticsEventQueue, RestoCore.Infrastructure.Messaging.AnalyticsEventQueue>();
-
-// Redis Streams & Order Queue (registered via factory for lazy initialization)
-builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(_ => StackExchange.Redis.ConnectionMultiplexer.Connect(redisConfig));
 builder.Services.AddScoped<IOrderQueueService, RestoCore.Infrastructure.Messaging.RedisOrderQueueService>();
 
 // WebSockets & Notifications
@@ -203,22 +212,27 @@ builder.Services.AddHostedService<RestoCore.Infrastructure.BackgroundServices.Or
 builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.PurgeArchivedDishesWorker>();
 builder.Services.AddHostedService<RestoCore.Infrastructure.Workers.AnalyticsAggregationWorker>();
 
-// Authorization & OPA
+// Authorization & OPA (ADR-0017 Granular RBAC Policies)
 builder.Services.AddHttpClient<IOpaClient, OpaClient>();
 builder.Services.AddScoped<IAuthorizationHandler, OpaAuthorizationHandler>();
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("PublicRead", policy => policy.RequireAssertion(_ => true));
     options.AddPolicy("TenantAdminOnly", policy => policy.Requirements.Add(new OpaRequirement("manage_menu")));
+    options.AddPolicy("ManageMenu", policy => policy.Requirements.Add(new OpaRequirement("manage_menu")));
+    options.AddPolicy("ManageCategories", policy => policy.Requirements.Add(new OpaRequirement("manage_categories")));
+    options.AddPolicy("ManageBranding", policy => policy.Requirements.Add(new OpaRequirement("manage_branding")));
     options.AddPolicy("AnalyticsReadOnly", policy => policy.Requirements.Add(new OpaRequirement("read_metrics")));
     options.AddPolicy("KitchenOnly", policy => policy.Requirements.Add(new OpaRequirement("kitchen_stock")));
+    options.AddPolicy("KitchenStock", policy => policy.Requirements.Add(new OpaRequirement("kitchen_stock")));
+    options.AddPolicy("StorageUpload", policy => policy.Requirements.Add(new OpaRequirement("generate_presigned_url")));
     options.AddPolicy("SuperAdminOnly", policy => policy.Requirements.Add(new OpaRequirement("manage_tenants")));
 });
 
-// Telemetry (OpenTelemetry Traces, Metrics & Structured Logging)
+// Telemetry (OpenTelemetry Traces, Metrics & Structured Logging - ADR-0017)
 builder.Services.AddRestoCoreTelemetry(builder.Configuration);
 
-// Exception Handling
+// Exception Handling (RFC 7807 ProblemDetails)
 builder.Services.AddProblemDetails();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
@@ -236,48 +250,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseMiddleware<TenantResolutionMiddleware>();
-
-// Structured Execution Logging Middleware (correlates with Aspire Dashboard & OpenTelemetry traces)
-app.Use(async (context, next) =>
-{
-    var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-    var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-    var tenantContext = context.RequestServices.GetRequiredService<ITenantContext>();
-
-    logger.LogInformation("HTTP {Method} {Path} received for Tenant '{TenantSlug}' (TenantId: {TenantId})",
-        context.Request.Method,
-        context.Request.Path,
-        tenantContext.TenantSlug ?? "none",
-        tenantContext.TenantId?.ToString() ?? "none");
-
-    try
-    {
-        await next();
-        stopwatch.Stop();
-
-        logger.LogInformation("HTTP {Method} {Path} completed with Status {StatusCode} in {ElapsedMs}ms for Tenant '{TenantSlug}'",
-            context.Request.Method,
-            context.Request.Path,
-            context.Response.StatusCode,
-            stopwatch.ElapsedMilliseconds,
-            tenantContext.TenantSlug ?? "none");
-    }
-    catch (Exception ex)
-    {
-        stopwatch.Stop();
-        logger.LogError(ex, "HTTP {Method} {Path} failed after {ElapsedMs}ms for Tenant '{TenantSlug}'",
-            context.Request.Method,
-            context.Request.Path,
-            stopwatch.ElapsedMilliseconds,
-            tenantContext.TenantSlug ?? "none");
-        throw;
-    }
-});
-
 app.UseAuthorization();
 app.UseWebSockets();
 
-// Kitchen WebSocket stream for real-time dispatch (ADR-0007)
+// Kitchen WebSocket stream for real-time dispatch (ADR-0007 & ADR-0018 deterministic lifecycle)
 app.Map("/ws/kitchen", async context =>
 {
     if (context.WebSockets.IsWebSocketRequest)
@@ -291,16 +267,23 @@ app.Map("/ws/kitchen", async context =>
 
         using var webSocket = await context.WebSockets.AcceptWebSocketAsync();
         var wsManager = context.RequestServices.GetRequiredService<RestoCore.Infrastructure.WebSockets.KitchenWebSocketManager>();
-        wsManager.RegisterSocket(tenantSlug, webSocket);
+        var connectionId = wsManager.RegisterSocket(tenantSlug, webSocket);
 
-        var buffer = new byte[1024 * 4];
-        while (webSocket.State == System.Net.WebSockets.WebSocketState.Open)
+        try
         {
-            var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
-            if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+            var buffer = new byte[1024 * 4];
+            while (webSocket.State == System.Net.WebSockets.WebSocketState.Open)
             {
-                await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Closed", CancellationToken.None);
+                var result = await webSocket.ReceiveAsync(new ArraySegment<byte>(buffer), CancellationToken.None);
+                if (result.MessageType == System.Net.WebSockets.WebSocketMessageType.Close)
+                {
+                    await webSocket.CloseAsync(System.Net.WebSockets.WebSocketCloseStatus.NormalClosure, "Closed", CancellationToken.None);
+                }
             }
+        }
+        finally
+        {
+            wsManager.RemoveAndDisposeSocket(tenantSlug, connectionId);
         }
     }
     else

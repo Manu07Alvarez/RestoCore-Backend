@@ -1,4 +1,4 @@
-﻿namespace RestoCore.Api.Endpoints;
+namespace RestoCore.Api.Endpoints;
 
 using Microsoft.EntityFrameworkCore;
 using RestoCore.Application.Common.Interfaces;
@@ -17,6 +17,7 @@ public static class HealthEndpoints
         app.MapGet("/ready", async (
             IApplicationDbContext context,
             IStorageService storageService,
+            IConnectionMultiplexer redisMultiplexer,
             IConfiguration configuration,
             IHttpClientFactory httpClientFactory) =>
         {
@@ -35,13 +36,19 @@ public static class HealthEndpoints
                 checks["postgresql"] = $"Error: {ex.Message}";
             }
 
-            // 2. Redis check
+            // 2. Redis check (ADR-0018 OPT-06b: reuse singleton IConnectionMultiplexer instead of opening new TCP connections)
             try
             {
-                var redisConn = configuration["Redis:Configuration"] ?? "localhost:6379";
-                var multiplexer = await ConnectionMultiplexer.ConnectAsync(redisConn);
-                var ping = await multiplexer.GetDatabase().PingAsync();
-                checks["redis"] = $"Connected ({ping.TotalMilliseconds:F1}ms)";
+                if (redisMultiplexer.IsConnected)
+                {
+                    var ping = await redisMultiplexer.GetDatabase().PingAsync();
+                    checks["redis"] = $"Connected ({ping.TotalMilliseconds:F1}ms)";
+                }
+                else
+                {
+                    isAllHealthy = false;
+                    checks["redis"] = "Error: Redis multiplexer is disconnected";
+                }
             }
             catch (Exception ex)
             {

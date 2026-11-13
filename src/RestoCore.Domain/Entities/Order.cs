@@ -2,6 +2,7 @@ namespace RestoCore.Domain.Entities;
 
 using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 public class Order
 {
@@ -23,17 +24,33 @@ public class Order
 
 public class OrderItemSnapshot
 {
+    [JsonPropertyName("menuItemId")]
     public Guid MenuItemId { get; set; }
+
+    [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("quantity")]
     public int Quantity { get; set; }
+
+    [JsonPropertyName("unitPrice")]
     public decimal UnitPrice { get; set; }
+
+    [JsonPropertyName("modifiers")]
     public List<OrderModifierSnapshot> Modifiers { get; set; } = new();
+
+    [JsonPropertyName("instructions")]
     public string? Instructions { get; set; }
 }
 
 public class OrderModifierSnapshot
 {
+    [JsonPropertyName("optionId")]
     public Guid OptionId { get; set; }
+
+    [JsonPropertyName("name")]
     public string Name { get; set; } = string.Empty;
+
+    [JsonPropertyName("priceDelta")]
     public decimal PriceDelta { get; set; }
 }

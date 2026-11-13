@@ -1,15 +1,19 @@
 namespace RestoCore.Infrastructure.Messaging;
 
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using RestoCore.Application.Common.Interfaces;
 using StackExchange.Redis;
 
 public class RedisOrderQueueService : IOrderQueueService
 {
+    public const string ActiveTenantStreamsKey = "restocore:active_tenant_streams";
+
     private readonly IConnectionMultiplexer _redis;
     private readonly ILogger<RedisOrderQueueService> _logger;
 
@@ -24,8 +28,12 @@ public class RedisOrderQueueService : IOrderQueueService
     public async Task<string> EnqueueOrderAsync(string tenantSlug, OrderIngestionPayload payload, CancellationToken ct = default)
     {
         var db = _redis.GetDatabase();
-        var streamKey = $"orders:{tenantSlug}";
+        var normalizedSlug = tenantSlug.Trim();
+        var streamKey = $"orders:{normalizedSlug}";
         var jsonPayload = JsonSerializer.Serialize(payload);
+
+        // ADR-0018 (OPT-05a): Register active tenant stream in Redis Set so worker does not poll PostgreSQL
+        await db.SetAddAsync(ActiveTenantStreamsKey, normalizedSlug);
 
         var entryId = await db.StreamAddAsync(streamKey, new NameValueEntry[]
         {
@@ -39,6 +47,34 @@ public class RedisOrderQueueService : IOrderQueueService
         return entryId.ToString();
     }
 
+    public async Task<IReadOnlyCollection<string>> GetActiveTenantStreamsAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            if (!_redis.IsConnected)
+            {
+                return Array.Empty<string>();
+            }
+
+            var db = _redis.GetDatabase();
+            var members = await db.SetMembersAsync(ActiveTenantStreamsKey);
+            if (members.Length == 0)
+            {
+                return Array.Empty<string>();
+            }
+
+            return members
+                .Where(m => !m.IsNullOrEmpty)
+                .Select(m => m.ToString())
+                .ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to read active tenant streams from Redis Set {Key}", ActiveTenantStreamsKey);
+            return Array.Empty<string>();
+        }
+    }
+
     public async Task<OrderStreamMessage?> DequeueNextOrderAsync(string tenantSlug, string consumerGroup, string consumerName, CancellationToken ct = default)
     {
         var db = _redis.GetDatabase();
@@ -46,7 +82,6 @@ public class RedisOrderQueueService : IOrderQueueService
 
         try
         {
-            // Create consumer group if not already created
             if (!await db.KeyExistsAsync(streamKey))
             {
                 return null;
