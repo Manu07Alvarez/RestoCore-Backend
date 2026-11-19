@@ -277,6 +277,15 @@ with tab_s3:
         buckets_response = s3.list_buckets()
         buckets = [b["Name"] for b in buckets_response.get("Buckets", [])]
 
+        # Fallback for SeaweedFS v4+ when bucket was created prior to IAM identity binding
+        for default_b in ["restocore-images"]:
+            if default_b not in buckets:
+                try:
+                    s3.head_bucket(Bucket=default_b)
+                    buckets.append(default_b)
+                except Exception:
+                    pass
+
         if not buckets:
             st.warning("No buckets found in SeaweedFS.")
             new_bucket = st.text_input("Create Bucket Name")
