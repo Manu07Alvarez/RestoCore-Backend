@@ -95,8 +95,8 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - S3_ENDPOINT_URL=http://seaweedfs:8333
-      - AWS_ACCESS_KEY_ID=any_key
-      - AWS_SECRET_ACCESS_KEY=any_secret
+      - AWS_ACCESS_KEY_ID=any
+      - AWS_SECRET_ACCESS_KEY=any
       - AWS_DEFAULT_REGION=us-east-1
     command: >
       sh -c "pip install streamlit psycopg2-binary redis boto3 pandas && streamlit run app.py --server.port=8501 --server.address=0.0.0.0"

@@ -97,7 +97,19 @@ public class SeaweedStorageService : IStorageService
         try
         {
             var response = await _s3Client.ListBucketsAsync(cancellationToken);
-            return response.Buckets.Any(b => string.Equals(b.BucketName, bucketName, StringComparison.OrdinalIgnoreCase));
+            if (response.Buckets != null &&
+                response.Buckets.Any(b => string.Equals(b.BucketName, bucketName, StringComparison.OrdinalIgnoreCase)))
+            {
+                return true;
+            }
+
+            // Fallback for SeaweedFS v4+ when bucket exists in Filer without explicit IAM owner tag
+            await _s3Client.ListObjectsV2Async(new ListObjectsV2Request
+            {
+                BucketName = bucketName,
+                MaxKeys = 1
+            }, cancellationToken);
+            return true;
         }
         catch
         {
