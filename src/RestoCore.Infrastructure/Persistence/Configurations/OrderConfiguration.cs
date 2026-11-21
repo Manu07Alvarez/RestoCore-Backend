@@ -45,6 +45,6 @@ public class OrderConfiguration : IEntityTypeConfiguration<Order>
         // ADR-0014: Partial B-Tree index for active kitchen orders per tenant
         builder.HasIndex(o => o.TenantId)
             .HasDatabaseName("ix_orders_active_tenant")
-            .HasFilter("status NOT IN ('delivered', 'cancelled')");
+            .HasFilter("\"Status\" NOT IN ('delivered', 'cancelled')");
     }
 }
