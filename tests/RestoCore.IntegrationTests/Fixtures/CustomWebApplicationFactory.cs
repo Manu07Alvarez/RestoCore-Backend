@@ -13,6 +13,7 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseSetting("Database:AutoSeedOnStartup", "false");
         builder.ConfigureServices(services =>
         {
             // Remove existing DbContext registration
