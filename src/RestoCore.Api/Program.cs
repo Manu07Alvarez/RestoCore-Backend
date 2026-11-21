@@ -246,6 +246,16 @@ if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
+
+    var isTestHost = string.Equals(
+        app.Services.GetService<Microsoft.AspNetCore.Hosting.Server.IServer>()?.GetType().Name,
+        "TestServer",
+        StringComparison.Ordinal);
+
+    if (!isTestHost && app.Configuration.GetValue<bool>("Database:AutoSeedOnStartup"))
+    {
+        await RestoCore.Infrastructure.Persistence.Seed.DatabaseSeeder.SeedAsync(app.Services);
+    }
 }
 
 app.UseAuthentication();

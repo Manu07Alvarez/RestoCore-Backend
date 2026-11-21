@@ -1,0 +1,26 @@
+{
+  "identities": [
+    {
+      "name": "dev-admin",
+      "credentials": [
+        {
+          "accessKey": "any",
+          "secretKey": "any"
+        }
+      ],
+      "actions": [
+        "Admin",
+        "Read",
+        "Write",
+        "List",
+        "Tagging"
+      ]
+    },
+    {
+      "name": "anonymous",
+      "actions": [
+        "Read:restocore-images"
+      ]
+    }
+  ]
+}
