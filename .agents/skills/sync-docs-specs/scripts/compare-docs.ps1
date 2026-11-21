@@ -62,11 +62,24 @@ if (-not (Test-Path $DocsPath)) {
 
 $SpecsDir = Join-Path $BackendRoot "specs"
 $AdrPath = Join-Path $DocsPath "docs\adr"
+$WebsiteAdrPath = Join-Path $DocsPath "docs\Website\docs\developers\adr"
 $OpenApiPath = Join-Path $DocsPath "specs\openapi.yaml"
 $PoliciesPath = Join-Path $DocsPath "specs\policies"
 
-# 1. Inspect ADRs in Docs
-$Adrs = Get-ChildItem -Path $AdrPath -Filter "*.md" | Sort-Object Name
+# 1. Inspect ADRs in Docs (including Website ADR directory for newly published ADRs)
+$Adrs = @(Get-ChildItem -Path $AdrPath -Filter "*.md" -ErrorAction SilentlyContinue)
+if (Test-Path $WebsiteAdrPath) {
+    $ExistingAdrNumbers = @($Adrs | ForEach-Object { if ($_.Name -match "^(\d+)") { $matches[1] } } | Where-Object { $_ -and $_ -notin @("0005", "0006", "0008", "0009") })
+    $ExistingAdrNames = @($Adrs | Select-Object -ExpandProperty Name)
+    $WebsiteAdrs = Get-ChildItem -Path $WebsiteAdrPath -Filter "*.md" -ErrorAction SilentlyContinue | Where-Object {
+        $num = if ($_.Name -match "^(\d+)") { $matches[1] } else { "" }
+        ($_.Name -notin $ExistingAdrNames) -and ($num -notin $ExistingAdrNumbers) -and ($num -notin @("0008", "0009"))
+    }
+    if ($WebsiteAdrs) {
+        $Adrs += $WebsiteAdrs
+    }
+}
+$Adrs = $Adrs | Sort-Object Name
 if (-not [string]::IsNullOrWhiteSpace($AdrFilter)) {
     $Adrs = @($Adrs | Where-Object { $_.Name -match $AdrFilter -or $_.BaseName -match $AdrFilter })
     Write-Host "Filtering analysis for ADR query '$AdrFilter' ($($Adrs.Count) matched)" -ForegroundColor Cyan
